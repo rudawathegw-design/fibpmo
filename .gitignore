@@ -1,3 +1,7 @@
 # Custom domain is added later via Settings → Pages (or by un-ignoring this file)
 # so the site is testable at rudawathegw-design.github.io/fibpmo/ first.
 CNAME
+
+# local-only (never publish plaintext / build tooling)
+dashboard/_source.html
+_enc.js

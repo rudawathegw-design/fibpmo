@@ -95,137 +95,74 @@
   .note{font-size:12px;color:var(--muted);margin-top:9px;padding-left:2px}
   footer{margin-top:40px;text-align:center;color:var(--muted);font-size:12px}
   @media(max-width:760px){.kpis,.tpls{grid-template-columns:1fr}}
+
+  #pw-overlay{position:fixed;inset:0;display:grid;place-items:center;padding:20px;
+    background:linear-gradient(160deg,#dbeafe,#ede9fe90,#f0fdf4);font-family:'Inter',system-ui,sans-serif;z-index:50}
+  #pw-card{background:#fff;border:1px solid #e2e8f0;border-radius:22px;
+    box-shadow:0 20px 60px rgba(59,130,246,.15),0 4px 16px rgba(0,0,0,.07);padding:42px 50px;width:min(400px,92vw);text-align:center}
+  #pw-card .lg{font-size:36px;line-height:1;margin-bottom:14px}
+  #pw-card h2{font-size:22px;font-weight:800;letter-spacing:-.03em;margin:0 0 5px;color:#0f172a}
+  #pw-card p{color:#64748b;font-size:13px;margin:0 0 24px}
+  #pw-inp{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#1e293b;font-size:15px;
+    padding:11px 15px;font-family:inherit;text-align:center;letter-spacing:.06em;outline:none;transition:border .2s,box-shadow .2s}
+  #pw-inp:focus{border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+  #pw-btn{width:100%;margin-top:11px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;font-weight:700;font-size:14px;
+    border:none;border-radius:10px;padding:12px;cursor:pointer;transition:opacity .2s;font-family:inherit}
+  #pw-btn:hover{opacity:.9}
+  #pw-err{color:#dc2626;font-size:13px;margin-top:14px;min-height:18px}
+  #app{display:none}
 </style>
 </head>
 <body>
-<div class="wrap">
-
-  <header>
-    <div class="brandrow">
-      <div class="logo">FIB</div>
-      <div>
-        <h1>Project Management Office</h1>
-        <p>First Iraq Bank · live portfolio &amp; reporting</p>
-      </div>
-    </div>
-    <div class="topright">
-      <a class="backlink" href="../">← Portal</a>
-    </div>
-  </header>
-
-  <!-- LIVE: WEEKLY REPORT (Excel) -->
-  <div class="sec">
-    <h2>Weekly report <span class="badge"><span class="dot"></span>Live · view only</span></h2>
-    <div class="embed">
-      <div class="bar">
-        <span class="ic xls">▦</span><b>Weekly Report.xlsx</b>
-      </div>
-      <div class="ph-embed">
-        <div class="pic ic xls">▦</div>
-        <div>
-          <b>Live view connects here</b>
-          <p>Share the Excel from the <strong>PMO Team Site</strong> as <em>view-only</em> and paste its <em>Embed</em> code here — the live read-only sheet then appears. (Personal-OneDrive links are kept out of the public site for security.)</p>
-        </div>
-      </div>
+  <div id="pw-overlay">
+    <div id="pw-card">
+      <div class="lg">📊</div>
+      <h2>PMO Dashboard</h2>
+      <p>Enter the password to view the dashboard</p>
+      <input id="pw-inp" type="password" placeholder="Password" autofocus
+             onkeydown="if(event.key==='Enter')checkPw()">
+      <button id="pw-btn" onclick="checkPw()">Unlock →</button>
+      <div id="pw-err"></div>
     </div>
   </div>
 
-  <!-- LIVE: STEERING PRESENTATION (PowerPoint) -->
-  <div class="sec">
-    <h2>Steering presentation <span class="badge"><span class="dot"></span>Live · view only</span></h2>
-    <div class="embed">
-      <div class="bar">
-        <span class="ic ppt">▤</span><b>Steering Presentation.pptx</b>
-      </div>
-      <div class="ph-embed">
-        <div class="pic ic ppt">▤</div>
-        <div>
-          <b>Live view connects here</b>
-          <p>Share the PowerPoint from the <strong>PMO Team Site</strong> as <em>view-only</em> and paste its <em>Embed</em> code here — the live read-only deck then appears. (Personal-OneDrive links are kept out of the public site for security.)</p>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div id="app" class="wrap"></div>
 
-  <!-- KPIs -->
-  <div class="sec">
-    <h2>Portfolio at a glance</h2>
-    <div class="kpis">
-      <div class="kpi"><div class="n">6</div><div class="l">Active projects</div>
-        <div class="bar"><span style="width:100%;background:var(--fib2)"></span></div></div>
-      <div class="kpi"><div class="n">4</div><div class="l">On track</div>
-        <div class="bar"><span style="width:67%;background:var(--green)"></span></div></div>
-      <div class="kpi"><div class="n">1</div><div class="l">At risk</div>
-        <div class="bar"><span style="width:17%;background:var(--amber)"></span></div></div>
-      <div class="kpi"><div class="n">1</div><div class="l">Off track</div>
-        <div class="bar"><span style="width:17%;background:var(--red)"></span></div></div>
-    </div>
-    <div class="note">Sample figures — replace with your live numbers (or wire to the Excel above).</div>
-  </div>
+<script>
+  // Content is encrypted with AES-256-GCM; the password is the key. Nothing readable is in this source.
+  const ENC = { s:"OKUmTRO7IIUIKYqjHgD2jw==", i:"HOns0k6REZFYRfKC", c:"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", it:200000 };
 
-  <!-- PHASE TRACK -->
-  <div class="sec">
-    <h2>Delivery methodology</h2>
-    <div class="track">
-      <div class="ph"><span class="d">Phase 0</span><div class="t">Initiation</div><div class="c">Charter &amp; scope</div></div>
-      <div class="ph"><span class="d">Phase 1</span><div class="t">Planning &amp; Analysis</div><div class="c">BRD &amp; plan</div></div>
-      <div class="ph"><span class="d">Phase 2</span><div class="t">Execution</div><div class="c">Build &amp; configure</div></div>
-      <div class="ph"><span class="d">Phase 3</span><div class="t">Testing &amp; Validation</div><div class="c">Test plan / UAT</div></div>
-      <div class="ph"><span class="d">Phase 4</span><div class="t">Deployment</div><div class="c">Go-Live</div></div>
-      <div class="ph"><span class="d">Phase 5</span><div class="t">Closure</div><div class="c">Handover &amp; report</div></div>
-    </div>
-  </div>
+  function b64(b){ const s=atob(b), u=new Uint8Array(s.length); for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i); return u; }
 
-  <!-- PROJECTS -->
-  <div class="sec">
-    <h2>Projects</h2>
-    <div class="panel">
-      <table>
-        <thead>
-          <tr><th>Project</th><th>Code</th><th>Manager</th><th>Phase</th><th>Status</th><th>Budget used</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Core Banking Upgrade</td><td>P-101</td><td>Rudaw A.</td><td>Phase 2 · Execution</td>
-            <td><span class="pill ontrack">On track</span></td>
-            <td><span class="mini"><span style="width:48%;background:var(--green)"></span></span> 48%</td></tr>
-          <tr><td>Mobile App Rollout</td><td>P-102</td><td>—</td><td>Phase 3 · Testing</td>
-            <td><span class="pill atrisk">At risk</span></td>
-            <td><span class="mini"><span style="width:71%;background:var(--amber)"></span></span> 71%</td></tr>
-          <tr><td>Data Warehouse</td><td>P-103</td><td>—</td><td>Phase 1 · Planning</td>
-            <td><span class="pill ontrack">On track</span></td>
-            <td><span class="mini"><span style="width:22%;background:var(--green)"></span></span> 22%</td></tr>
-          <tr><td>Branch Network Refresh</td><td>P-104</td><td>—</td><td>Phase 4 · Go-Live</td>
-            <td><span class="pill offtrack">Off track</span></td>
-            <td><span class="mini"><span style="width:93%;background:var(--red)"></span></span> 93%</td></tr>
-          <tr><td>Vendor Onboarding Portal</td><td>P-105</td><td>—</td><td>Phase 0 · Initiation</td>
-            <td><span class="pill ontrack">On track</span></td>
-            <td><span class="mini"><span style="width:8%;background:var(--green)"></span></span> 8%</td></tr>
-          <tr><td>Compliance Reporting</td><td>P-106</td><td>—</td><td>Phase 5 · Closure</td>
-            <td><span class="pill ontrack">On track</span></td>
-            <td><span class="mini"><span style="width:99%;background:var(--green)"></span></span> 99%</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="note">Sample rows — send me your real projects and I'll drop them in.</div>
-  </div>
+  async function deriveKey(pw, salt){
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name:'PBKDF2', salt, iterations:ENC.it, hash:'SHA-256' },
+      base, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+  }
 
-  <!-- TEMPLATES -->
-  <div class="sec">
-    <h2>Template library</h2>
-    <div class="tpls">
-      <div class="tpl"><div class="ti">◆</div><div><b>Project Charter</b><br><small>Phase 0 kickoff</small></div></div>
-      <div class="tpl"><div class="ti">◆</div><div><b>Business Requirements (BRD)</b><br><small>Phase 1</small></div></div>
-      <div class="tpl"><div class="ti">◆</div><div><b>Change Request (CR)</b><br><small>Any phase</small></div></div>
-      <div class="tpl"><div class="ti">◆</div><div><b>Test Plan</b><br><small>Phase 3</small></div></div>
-      <div class="tpl"><div class="ti">◆</div><div><b>Vendor Comparison</b><br><small>Procurement</small></div></div>
-      <div class="tpl"><div class="ti">◆</div><div><b>Project Closure Report</b><br><small>Phase 5</small></div></div>
-    </div>
-  </div>
+  async function checkPw(){
+    const inp = document.getElementById('pw-inp');
+    const err = document.getElementById('pw-err');
+    const pw = inp.value; if(!pw) return;
+    err.textContent = 'Unlocking…';
+    try {
+      const key = await deriveKey(pw, b64(ENC.s));
+      const pt  = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64(ENC.i) }, key, b64(ENC.c));
+      document.getElementById('app').innerHTML = new TextDecoder().decode(pt);
+      document.getElementById('pw-overlay').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      sessionStorage.setItem('pmo_pw', pw);
+    } catch(e){
+      err.textContent = 'Incorrect password — try again.';
+      inp.value = ''; inp.focus();
+      setTimeout(()=>err.textContent='', 3000);
+    }
+  }
 
-  <footer>
-    FIB Project Management Office · Links renewed 10 Jun 2026 · Live read-only views from Microsoft 365 / SharePoint
-  </footer>
-
-</div>
+  // Auto-unlock within the same browser session after one successful entry.
+  (function(){ const c = sessionStorage.getItem('pmo_pw');
+    if(c){ const i=document.getElementById('pw-inp'); i.value=c; checkPw(); } })();
+</script>
 </body>
 </html>
