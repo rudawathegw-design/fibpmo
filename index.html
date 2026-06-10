@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIB · PMO Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;
+    background:linear-gradient(160deg,#dbeafe,#ede9fe90,#f0fdf4);color:#0f172a;padding:20px}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:22px;
+    box-shadow:0 20px 60px rgba(59,130,246,.15),0 4px 16px rgba(0,0,0,.07);
+    padding:42px 50px;width:min(400px,92vw);text-align:center}
+  .logo{font-size:36px;line-height:1;margin-bottom:14px}
+  h2{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:5px}
+  p.sub{color:#64748b;font-size:13px;margin-bottom:24px}
+  .inp{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#1e293b;
+    font-size:15px;padding:11px 15px;font-family:inherit;text-align:center;letter-spacing:.06em;
+    transition:border .2s,background .2s,box-shadow .2s;outline:none}
+  .inp::placeholder{letter-spacing:normal;color:#94a3b8}
+  .inp:focus{border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+  .btn-primary{width:100%;margin-top:11px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;
+    font-weight:700;font-size:14px;border:none;border-radius:10px;padding:12px;cursor:pointer;
+    letter-spacing:.02em;transition:opacity .2s;font-family:inherit}
+  .btn-primary:hover{opacity:.9}
+  .err-msg{color:#dc2626;font-size:13px;margin-top:14px;min-height:18px;visibility:hidden}
+  .err-msg.show{visibility:visible}
+  .foot{color:#94a3b8;font-size:11px;margin-top:22px}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">📊</div>
+    <h2>PMO Portal</h2>
+    <p class="sub">Enter your access code to continue</p>
+
+    <form id="gate" autocomplete="off">
+      <input id="code" class="inp" type="password" placeholder="Access code" aria-label="Access code" autofocus>
+      <button type="submit" class="btn-primary">Enter →</button>
+      <div class="err-msg" id="err">Invalid code — please try again.</div>
+    </form>
+
+    <div class="foot">First Iraq Bank · Project Management Office</div>
+  </div>
+
+<script>
+  // ── Routing map ─────────────────────────────────────────────────────
+  //  code (lowercase)  →  destination
+  //  Change a destination by editing the URL on the right.
+  var ROUTES = {
+    "fib": "report/",   // weekly progress report (wrapped so the URL stays on fibpmo.com)
+    "pmo": "dashboard/" // PMO dashboard
+  };
+
+  var form = document.getElementById("gate");
+  var err  = document.getElementById("err");
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var code = document.getElementById("code").value.trim().toLowerCase();
+    if (ROUTES[code]) {
+      window.location.href = ROUTES[code];
+    } else {
+      err.classList.add("show");
+    }
+  });
+  // hide the error again as soon as the user edits the field
+  document.getElementById("code").addEventListener("input", function () {
+    err.classList.remove("show");
+  });
+</script>
+</body>
+</html>

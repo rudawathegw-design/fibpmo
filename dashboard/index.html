@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIB · PMO Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fib:#0a3b7c; --fib2:#1366cc; --accent:#f5a623;
+    --green:#16a34a; --amber:#f59e0b; --red:#dc2626;
+    --bg:#f4f6fb; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e6eaf2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  a{text-decoration:none;color:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 60px}
+
+  /* Header */
+  header{background:linear-gradient(120deg,var(--fib),var(--fib2));color:#fff;border-radius:18px;padding:30px 34px;
+    box-shadow:0 14px 34px -14px rgba(10,59,124,.6);position:relative;overflow:hidden}
+  header::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;
+    background:rgba(255,255,255,.07)}
+  .brandrow{display:flex;align-items:center;gap:14px}
+  .logo{width:50px;height:50px;border-radius:13px;background:#fff;color:var(--fib);display:grid;place-items:center;
+    font-weight:800;font-size:20px;letter-spacing:.5px;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+  header h1{font-size:24px;font-weight:700}
+  header p{opacity:.9;font-size:14px;margin-top:3px}
+  .topright{position:absolute;right:30px;top:26px;display:flex;gap:8px;align-items:center}
+  .backlink{font-size:12px;color:#fff;opacity:.85;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:5px 11px}
+  .backlink:hover{opacity:1;background:rgba(255,255,255,.1)}
+
+  /* Section */
+  .sec{margin-top:32px}
+  .sec h2{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:13px;
+    display:flex;align-items:center;gap:10px}
+  .sec h2::before{content:"";width:18px;height:3px;border-radius:3px;background:var(--accent)}
+  .badge{margin-left:auto;font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:none;
+    background:#e7f7ed;color:var(--green);border-radius:20px;padding:3px 11px;display:inline-flex;align-items:center;gap:6px}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.18)}
+
+  /* Live embed */
+  .embed{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    box-shadow:0 8px 26px -18px rgba(15,23,42,.4)}
+  .embed .bar{display:flex;align-items:center;gap:9px;padding:11px 16px;border-bottom:1px solid var(--line);background:#fafcff}
+  .embed .bar .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:#fff;font-size:14px}
+  .ic.xls{background:linear-gradient(135deg,#107c41,#16a34a)}
+  .ic.ppt{background:linear-gradient(135deg,#c43e1c,#e8633a)}
+  .embed .bar b{font-size:13px}
+  .embed .bar .open{margin-left:auto;font-size:12px;color:var(--fib2);font-weight:600}
+  .embed iframe{display:block;border:0;width:100%}
+  .ppt-frame{height:0;padding-bottom:56.25%;position:relative}
+  .ppt-frame iframe{position:absolute;inset:0;height:100%}
+  .ph-embed{display:flex;gap:16px;align-items:center;padding:38px 28px;color:var(--muted)}
+  .ph-embed .pic{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:22px;flex:0 0 auto}
+  .ph-embed b{color:var(--ink);font-size:15px}
+  .ph-embed p{font-size:13px;margin-top:4px;max-width:640px}
+
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .kpi .n{font-size:30px;font-weight:800;color:var(--fib)}
+  .kpi .l{font-size:13px;color:var(--muted);margin-top:2px}
+  .kpi .bar{height:6px;border-radius:6px;background:var(--line);margin-top:12px;overflow:hidden}
+  .kpi .bar>span{display:block;height:100%;border-radius:6px}
+
+  /* Phase track */
+  .track{display:flex;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;overflow-x:auto}
+  .ph{flex:1;min-width:128px;text-align:center;padding:12px 8px;border-radius:11px;background:#f7f9fd;border:1px solid var(--line)}
+  .ph .d{font-size:11px;font-weight:700;color:#fff;background:var(--fib2);border-radius:20px;padding:2px 9px;display:inline-block}
+  .ph .t{font-size:13px;font-weight:600;margin-top:8px}
+  .ph .c{font-size:11px;color:var(--muted);margin-top:3px}
+
+  /* Projects table */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{background:#f7f9fd;text-align:left;padding:13px 16px;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+  td{padding:13px 16px;border-top:1px solid var(--line)}
+  tr:hover td{background:#fafcff}
+  .pill{font-size:12px;font-weight:600;padding:3px 11px;border-radius:20px;display:inline-block}
+  .ontrack{background:#e7f7ed;color:var(--green)}
+  .atrisk{background:#fef3e2;color:#b45309}
+  .offtrack{background:#fdeaea;color:var(--red)}
+  .mini{height:7px;border-radius:6px;background:var(--line);width:120px;overflow:hidden;display:inline-block;vertical-align:middle}
+  .mini>span{display:block;height:100%}
+
+  /* Templates */
+  .tpls{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .tpl{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+  .tpl .ti{width:40px;height:40px;border-radius:10px;background:#eef3fc;color:var(--fib2);display:grid;place-items:center;font-size:18px}
+  .tpl b{font-size:14px}.tpl small{color:var(--muted);font-size:12px}
+
+  .note{font-size:12px;color:var(--muted);margin-top:9px;padding-left:2px}
+  footer{margin-top:40px;text-align:center;color:var(--muted);font-size:12px}
+  @media(max-width:760px){.kpis,.tpls{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brandrow">
+      <div class="logo">FIB</div>
+      <div>
+        <h1>Project Management Office</h1>
+        <p>First Iraq Bank · live portfolio &amp; reporting</p>
+      </div>
+    </div>
+    <div class="topright">
+      <a class="backlink" href="../">← Portal</a>
+    </div>
+  </header>
+
+  <!-- LIVE: WEEKLY REPORT (Excel) -->
+  <div class="sec">
+    <h2>Weekly report <span class="badge"><span class="dot"></span>Live · view only</span></h2>
+    <div class="embed">
+      <div class="bar">
+        <span class="ic xls">▦</span><b>Weekly Report.xlsx</b>
+      </div>
+      <div class="ph-embed">
+        <div class="pic ic xls">▦</div>
+        <div>
+          <b>Live view connects here</b>
+          <p>Share the Excel from the <strong>PMO Team Site</strong> as <em>view-only</em> and paste its <em>Embed</em> code here — the live read-only sheet then appears. (Personal-OneDrive links are kept out of the public site for security.)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE: STEERING PRESENTATION (PowerPoint) -->
+  <div class="sec">
+    <h2>Steering presentation <span class="badge"><span class="dot"></span>Live · view only</span></h2>
+    <div class="embed">
+      <div class="bar">
+        <span class="ic ppt">▤</span><b>Steering Presentation.pptx</b>
+      </div>
+      <div class="ph-embed">
+        <div class="pic ic ppt">▤</div>
+        <div>
+          <b>Live view connects here</b>
+          <p>Share the PowerPoint from the <strong>PMO Team Site</strong> as <em>view-only</em> and paste its <em>Embed</em> code here — the live read-only deck then appears. (Personal-OneDrive links are kept out of the public site for security.)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="sec">
+    <h2>Portfolio at a glance</h2>
+    <div class="kpis">
+      <div class="kpi"><div class="n">6</div><div class="l">Active projects</div>
+        <div class="bar"><span style="width:100%;background:var(--fib2)"></span></div></div>
+      <div class="kpi"><div class="n">4</div><div class="l">On track</div>
+        <div class="bar"><span style="width:67%;background:var(--green)"></span></div></div>
+      <div class="kpi"><div class="n">1</div><div class="l">At risk</div>
+        <div class="bar"><span style="width:17%;background:var(--amber)"></span></div></div>
+      <div class="kpi"><div class="n">1</div><div class="l">Off track</div>
+        <div class="bar"><span style="width:17%;background:var(--red)"></span></div></div>
+    </div>
+    <div class="note">Sample figures — replace with your live numbers (or wire to the Excel above).</div>
+  </div>
+
+  <!-- PHASE TRACK -->
+  <div class="sec">
+    <h2>Delivery methodology</h2>
+    <div class="track">
+      <div class="ph"><span class="d">Phase 0</span><div class="t">Initiation</div><div class="c">Charter &amp; scope</div></div>
+      <div class="ph"><span class="d">Phase 1</span><div class="t">Planning &amp; Analysis</div><div class="c">BRD &amp; plan</div></div>
+      <div class="ph"><span class="d">Phase 2</span><div class="t">Execution</div><div class="c">Build &amp; configure</div></div>
+      <div class="ph"><span class="d">Phase 3</span><div class="t">Testing &amp; Validation</div><div class="c">Test plan / UAT</div></div>
+      <div class="ph"><span class="d">Phase 4</span><div class="t">Deployment</div><div class="c">Go-Live</div></div>
+      <div class="ph"><span class="d">Phase 5</span><div class="t">Closure</div><div class="c">Handover &amp; report</div></div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="sec">
+    <h2>Projects</h2>
+    <div class="panel">
+      <table>
+        <thead>
+          <tr><th>Project</th><th>Code</th><th>Manager</th><th>Phase</th><th>Status</th><th>Budget used</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Core Banking Upgrade</td><td>P-101</td><td>Rudaw A.</td><td>Phase 2 · Execution</td>
+            <td><span class="pill ontrack">On track</span></td>
+            <td><span class="mini"><span style="width:48%;background:var(--green)"></span></span> 48%</td></tr>
+          <tr><td>Mobile App Rollout</td><td>P-102</td><td>—</td><td>Phase 3 · Testing</td>
+            <td><span class="pill atrisk">At risk</span></td>
+            <td><span class="mini"><span style="width:71%;background:var(--amber)"></span></span> 71%</td></tr>
+          <tr><td>Data Warehouse</td><td>P-103</td><td>—</td><td>Phase 1 · Planning</td>
+            <td><span class="pill ontrack">On track</span></td>
+            <td><span class="mini"><span style="width:22%;background:var(--green)"></span></span> 22%</td></tr>
+          <tr><td>Branch Network Refresh</td><td>P-104</td><td>—</td><td>Phase 4 · Go-Live</td>
+            <td><span class="pill offtrack">Off track</span></td>
+            <td><span class="mini"><span style="width:93%;background:var(--red)"></span></span> 93%</td></tr>
+          <tr><td>Vendor Onboarding Portal</td><td>P-105</td><td>—</td><td>Phase 0 · Initiation</td>
+            <td><span class="pill ontrack">On track</span></td>
+            <td><span class="mini"><span style="width:8%;background:var(--green)"></span></span> 8%</td></tr>
+          <tr><td>Compliance Reporting</td><td>P-106</td><td>—</td><td>Phase 5 · Closure</td>
+            <td><span class="pill ontrack">On track</span></td>
+            <td><span class="mini"><span style="width:99%;background:var(--green)"></span></span> 99%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">Sample rows — send me your real projects and I'll drop them in.</div>
+  </div>
+
+  <!-- TEMPLATES -->
+  <div class="sec">
+    <h2>Template library</h2>
+    <div class="tpls">
+      <div class="tpl"><div class="ti">◆</div><div><b>Project Charter</b><br><small>Phase 0 kickoff</small></div></div>
+      <div class="tpl"><div class="ti">◆</div><div><b>Business Requirements (BRD)</b><br><small>Phase 1</small></div></div>
+      <div class="tpl"><div class="ti">◆</div><div><b>Change Request (CR)</b><br><small>Any phase</small></div></div>
+      <div class="tpl"><div class="ti">◆</div><div><b>Test Plan</b><br><small>Phase 3</small></div></div>
+      <div class="tpl"><div class="ti">◆</div><div><b>Vendor Comparison</b><br><small>Procurement</small></div></div>
+      <div class="tpl"><div class="ti">◆</div><div><b>Project Closure Report</b><br><small>Phase 5</small></div></div>
+    </div>
+  </div>
+
+  <footer>
+    FIB Project Management Office · Links renewed 10 Jun 2026 · Live read-only views from Microsoft 365 / SharePoint
+  </footer>
+
+</div>
+</body>
+</html>
