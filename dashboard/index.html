@@ -202,16 +202,16 @@
   .ni{position:absolute;opacity:0;pointer-events:none}
   .ni-check{top:17%;left:11%;width:52px;height:52px;border-radius:50%;background:#5BA97B;color:#fff;
     display:grid;place-items:center;font-size:24px;font-weight:800;box-shadow:0 12px 28px -10px rgba(91,169,123,.6);
-    animation:niFromL .8s .9s cubic-bezier(.22,1,.36,1) forwards,niFloat 3.4s 1.7s ease-in-out infinite}
+    animation:niFromL .8s .9s cubic-bezier(.22,1,.36,1) forwards,niFloat 3.4s 1.7s ease-in-out infinite,niOut .3s 2.3s forwards}
   .ni-check2{bottom:20%;right:13%;width:40px;height:40px;border-radius:50%;background:#fff;color:#5BA97B;
     border:2.5px solid #5BA97B;display:grid;place-items:center;font-size:18px;font-weight:800;
-    animation:niFromR .8s 1.05s cubic-bezier(.22,1,.36,1) forwards,niFloat 3.8s 1.9s ease-in-out infinite reverse}
+    animation:niFromR .8s 1.05s cubic-bezier(.22,1,.36,1) forwards,niFloat 3.8s 1.9s ease-in-out infinite reverse,niOut .3s 2.3s forwards}
   .ni-pie{top:16%;right:12%;width:54px;height:54px;border-radius:50%;
     background:conic-gradient(#D97757 0 68%,#F0EDE4 68% 100%);border:3px solid #fff;
     box-shadow:0 12px 28px -10px rgba(217,119,87,.5);
-    animation:niFromR .8s .95s cubic-bezier(.22,1,.36,1) forwards,niSpin 9s 1.8s linear infinite}
+    animation:niFromR .8s .95s cubic-bezier(.22,1,.36,1) forwards,niSpin 9s 1.8s linear infinite,niOut .3s 2.3s forwards}
   .ni-bars{bottom:19%;left:12%;display:flex;align-items:flex-end;gap:5px;height:46px;
-    animation:niFromL .8s 1.1s cubic-bezier(.22,1,.36,1) forwards,niFloat 3.6s 2s ease-in-out infinite}
+    animation:niFromL .8s 1.1s cubic-bezier(.22,1,.36,1) forwards,niFloat 3.6s 2s ease-in-out infinite,niOut .3s 2.3s forwards}
   .ni-bars i{width:11px;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,#E9A23B,#D97757);
     animation:niGrow 1.1s 1.2s cubic-bezier(.22,1,.36,1) both}
   .ni-bars i:nth-child(1){height:45%}.ni-bars i:nth-child(2){height:75%;animation-delay:1.35s}
@@ -219,7 +219,7 @@
   @keyframes niGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
   .ni-bars i{transform-origin:bottom}
   .ni-gantt{top:46%;left:7%;width:86px;
-    animation:niFromL .8s 1.2s cubic-bezier(.22,1,.36,1) forwards}
+    animation:niFromL .8s 1.2s cubic-bezier(.22,1,.36,1) forwards,niOut .3s 2.3s forwards}
   .ni-gantt i{display:block;height:9px;border-radius:5px;margin:6px 0}
   .ni-gantt i:nth-child(1){width:78%;background:#5BA97B}
   .ni-gantt i:nth-child(2){width:55%;background:#E9A23B;margin-left:18%}
@@ -227,11 +227,12 @@
   .ni-pct{top:44%;right:8%;font-family:'Sora',sans-serif;font-weight:800;font-size:21px;color:#C15F3C;
     background:#fff;border:1.5px solid #F0CDBC;border-radius:14px;padding:9px 15px;
     box-shadow:0 12px 26px -12px rgba(193,95,60,.5);
-    animation:niFromR .8s 1.3s cubic-bezier(.22,1,.36,1) forwards,niFloat 4s 2.2s ease-in-out infinite}
+    animation:niFromR .8s 1.3s cubic-bezier(.22,1,.36,1) forwards,niFloat 4s 2.2s ease-in-out infinite,niOut .3s 2.3s forwards}
   @keyframes niFromL{from{opacity:0;transform:translateX(-110px) rotate(-8deg)}to{opacity:1;transform:none}}
   @keyframes niFromR{from{opacity:0;transform:translateX(110px) rotate(8deg)}to{opacity:1;transform:none}}
   @keyframes niFloat{0%,100%{translate:0 0}50%{translate:0 -12px}}
   @keyframes niSpin{from{opacity:1;rotate:0deg}to{opacity:1;rotate:360deg}}
+  @keyframes niOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.82)}}
   @media(max-width:760px){.ni{display:none}}
   #app{display:none}
 </style>
