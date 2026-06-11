@@ -248,6 +248,7 @@
       <h2>Second Security Code</h2>
       <p>You've passed the first check.<br>Enter the second security code to open the PMO dashboard.</p>
       <input id="pw-inp" type="password" placeholder="Second security code" autofocus
+             autocomplete="one-time-code" name="otp-code" data-lpignore="true"
              onkeydown="if(event.key==='Enter')checkPw()">
       <button id="pw-btn" onclick="checkPw()">Unlock dashboard →</button>
       <div id="pw-err"></div>
