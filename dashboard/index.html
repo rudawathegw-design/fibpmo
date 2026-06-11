@@ -288,28 +288,58 @@
       base, { name:'AES-GCM', length:256 }, false, ['decrypt']);
   }
 
+  const PW_KEY = 'fibpmo_unlock';
+
+  async function unlock(pw, isAuto){
+    const key = await deriveKey(pw, b64(ENC.s));
+    const pt  = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64(ENC.i) }, key, b64(ENC.c));
+    document.getElementById('app').innerHTML = new TextDecoder().decode(pt);
+    document.getElementById('pw-overlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    var ns = document.getElementById('news-splash');
+    if (isAuto) {
+      ns.style.display = 'none';
+    } else {
+      ns.classList.add('on');
+      setTimeout(function(){ ns.style.display = 'none'; }, 4000);
+    }
+    var rt = document.getElementById('rt-js');
+    if (rt) { try { (new Function(rt.textContent))(); } catch(e) { console.error('rt', e); } }
+  }
+
   async function checkPw(){
     const inp = document.getElementById('pw-inp');
     const err = document.getElementById('pw-err');
     const pw = inp.value; if(!pw) return;
     err.textContent = 'Unlocking…';
     try {
-      const key = await deriveKey(pw, b64(ENC.s));
-      const pt  = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64(ENC.i) }, key, b64(ENC.c));
-      document.getElementById('app').innerHTML = new TextDecoder().decode(pt);
-      document.getElementById('pw-overlay').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      var ns = document.getElementById('news-splash');
-      ns.classList.add('on');
-      setTimeout(function(){ ns.style.display = 'none'; }, 4000);
-      var rt = document.getElementById('rt-js');
-      if (rt) { try { (new Function(rt.textContent))(); } catch(e) { console.error('rt', e); } }
+      await unlock(pw, false);
+      try { localStorage.setItem(PW_KEY, pw); } catch(e){}
     } catch(e){
       err.textContent = 'Incorrect code — try again.';
       inp.value = ''; inp.focus();
       setTimeout(()=>err.textContent='', 3000);
     }
   }
+
+  // Remember the code on this device after one successful entry, so a refresh
+  // doesn't ask again. Open dashboard/?lock (or clear site data) to forget it.
+  (async function(){
+    let saved = null;
+    try {
+      if (location.search.indexOf('lock') > -1) { localStorage.removeItem(PW_KEY); return; }
+      saved = localStorage.getItem(PW_KEY);
+    } catch(e){}
+    if (!saved) return;
+    const card = document.getElementById('pw-card');
+    card.style.visibility = 'hidden';
+    try { await unlock(saved, true); }
+    catch(e){
+      try { localStorage.removeItem(PW_KEY); } catch(_){}
+      card.style.visibility = '';
+      document.getElementById('pw-inp').focus();
+    }
+  })();
 </script>
 </body>
 </html>
