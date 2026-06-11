@@ -134,6 +134,11 @@
     <div class="foot">FIRST IRAQ BANK · PROJECT MANAGEMENT OFFICE</div>
   </div>
 
+  <!-- weekly report shown inline on fibpmo.com after the report code -->
+  <div id="reportview" style="position:fixed;inset:0;z-index:60;display:none;background:#fff">
+    <iframe id="rptifr" style="border:0;width:100%;height:100%;display:block" title="Weekly Progress Report" allow="clipboard-read; clipboard-write"></iframe>
+  </div>
+
   <!-- opening transition shown after a correct code -->
   <div class="splash" id="splash" aria-hidden="true">
     <div class="sp-panel sp-top"></div>
@@ -148,27 +153,25 @@
   </div>
 
 <script>
-  // ── Routing map ─────────────────────────────────────────────────────
-  //  code (lowercase)  →  destination
-  var ROUTES = {
-    "fib": "report/",   // weekly progress report
-    "pmo": "dashboard/" // PMO dashboard
-  };
+  // ── Access codes ────────────────────────────────────────────────────
+  var REPORT_CODE = "fib";                 // shows the weekly report inline on fibpmo.com
+  var DASH_CODE   = "pmo";                 // opens the PMO dashboard immediately
+  var REPORT_URL  = "https://rudawathegw-design.github.io/jira-weekly-progress/";
 
   var form = document.getElementById("gate");
   var err  = document.getElementById("err");
   var card = document.getElementById("card");
-  var splash = document.getElementById("splash");
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var code = document.getElementById("code").value.trim().toLowerCase();
-    if (ROUTES[code]) {
-      var dest = ROUTES[code];
-      splash.classList.add("on");
-      splash.setAttribute("aria-hidden", "false");
-      // let the opening play, then go
-      setTimeout(function () { window.location.href = dest; }, 2600);
+    if (code === DASH_CODE) {
+      window.location.href = "dashboard/";          // straight to the dashboard
+    } else if (code === REPORT_CODE) {
+      var ifr = document.getElementById("rptifr");
+      if (!ifr.getAttribute("src")) ifr.setAttribute("src", REPORT_URL);
+      document.getElementById("reportview").style.display = "block";
+      card.style.display = "none";                  // report fills fibpmo.com
     } else {
       err.classList.add("show");
       card.classList.add("wrong");
