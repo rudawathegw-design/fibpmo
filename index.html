@@ -52,7 +52,12 @@
       base, {name:'AES-GCM',length:256}, false, ['decrypt']);
     var pt = await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(g.i)}, key, b64(g.c));
     var url = new TextDecoder().decode(pt);
-    if (g.act === 'reload') { f.src = url; } else { window.location.href = url; }
+    if (g.act === 'reload') {
+      document.getElementById('load').classList.remove('gone');
+      f.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'r=' + Date.now();
+    } else {
+      window.location.href = url;
+    }
   }
 
   var buf = "", busy = false;
