@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FIB · PMO Weekly Report</title>
+<title>FIB · Portal</title>
 <style>
   html,body{margin:0;height:100%;background:#FAF9F5;overflow:hidden}
   #rpt{position:fixed;inset:0;border:0;width:100%;height:100%;display:block}
-  /* brief loading hint until the report frame paints */
   #load{position:fixed;inset:0;display:grid;place-items:center;background:#FAF9F5;
     font-family:system-ui,Segoe UI,sans-serif;color:#8a8676;z-index:2;transition:opacity .4s}
   #load.gone{opacity:0;pointer-events:none}
@@ -18,33 +17,60 @@
 </style>
 </head>
 <body>
-  <!-- fibpmo.com opens the weekly report directly (no access-code page) -->
-  <iframe id="rpt"
-          src="https://rudawathegw-design.github.io/jira-weekly-progress/"
-          title="FIB PMO Weekly Report"
+  <iframe id="rpt" title="FIB Portal"
           allow="clipboard-read; clipboard-write"
           onload="document.getElementById('load').classList.add('gone')"></iframe>
 
   <div id="load"><div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
 
 <script>
-  // ── Hidden keyboard access (no visible code box) ──────────────────────
-  //   type  pmo  → PMO dashboard (asks the second security password)
-  //   type  fib  → reload the weekly report
-  // Note: works while this page has focus. After clicking inside the report,
-  // press Esc once (returns focus here) then type the word.
-  (function () {
-    var buf = "";
-    function onKey(e) {
-      if (!e.key || e.key.length !== 1) return;
-      buf = (buf + e.key.toLowerCase()).slice(-6);
-      if (buf.indexOf("pmo") > -1) { window.location.href = "dashboard/"; }
-      else if (buf.indexOf("fib") > -1) { buf = ""; var f = document.getElementById("rpt"); f.src = f.src; }
+(function () {
+  var f = document.getElementById('rpt');
+  var D0 = "==wLzNXZyd2byBXL5x2alV2dtEmcpp2LvlmLiVHa0l2Zu42ZpNXZk1ydnVGa0F2dhRWdy9yL6MHc0RHa";
+  function dec(s){ return atob(s.split('').reverse().join('')); }
+  f.src = dec(D0);
+
+  var G = [
+    {h:"97a43d3b29cae29594c83a51f4f9caf046ec595ae1a64addc3c8a44934bb118c",
+     s:"E86cblitD+xIVKhBHI2OWA==",i:"Ftnp2vv8z/hxp/hx",
+     c:"5je07mdTfa78WEHy5TZqKM8B6RKXnwhW7MySGo9LDZ1jIlUTStWDOHQLGDCiEoprCgyAI2b8JOPkXoeEN9PTY1Pgj6wc5jbI0Do=",
+     it:100000, act:"reload"},
+    {h:"ad94a20a343951816a59c46c9681cfd222fa8f771d9dd6b4a7b2b51ea9c529fe",
+     s:"wDllNqt22XpQ59gYkEI4sw==",i:"SqSYVbawKY1qr/o3",
+     c:"niqRHuLpGD0gjF5BP2pjDD58K8bHjjQderI=",
+     it:100000, act:"go"}
+  ];
+
+  function b64(b){ var s=atob(b),u=new Uint8Array(s.length); for(var i=0;i<s.length;i++)u[i]=s.charCodeAt(i); return u; }
+  async function sha(t){
+    var d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+    return Array.from(new Uint8Array(d)).map(function(x){return x.toString(16).padStart(2,'0');}).join('');
+  }
+  async function open(g, t){
+    var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(t), 'PBKDF2', false, ['deriveKey']);
+    var key = await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(g.s),iterations:g.it,hash:'SHA-256'},
+      base, {name:'AES-GCM',length:256}, false, ['decrypt']);
+    var pt = await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(g.i)}, key, b64(g.c));
+    var url = new TextDecoder().decode(pt);
+    if (g.act === 'reload') { f.src = url; } else { window.location.href = url; }
+  }
+
+  var buf = "", busy = false;
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { window.focus(); return; }
+    if (!e.key || e.key.length !== 1 || busy) return;
+    buf = (buf + e.key.toLowerCase()).slice(-8);
+    for (var n = 3; n <= Math.min(8, buf.length); n++) {
+      (function (t) {
+        sha(t).then(function (h) {
+          for (var j = 0; j < G.length; j++) {
+            if (G[j].h === h && !busy) { busy = true; buf = ""; open(G[j], t).finally(function(){ busy = false; }); }
+          }
+        });
+      })(buf.slice(-n));
     }
-    window.addEventListener("keydown", onKey);
-    // pressing Esc pulls focus back to this page so the shortcut keeps working
-    window.addEventListener("keydown", function (e) { if (e.key === "Escape") window.focus(); });
-  })();
+  });
+})();
 </script>
 </body>
 </html>
