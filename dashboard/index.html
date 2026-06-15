@@ -237,6 +237,30 @@
   @keyframes niSpin{from{opacity:1;rotate:0deg}to{opacity:1;rotate:360deg}}
   @keyframes niOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.82)}}
   @media(max-width:760px){.ni{display:none}}
+  /* ── mobile / phone layout ── */
+  @media(max-width:640px){
+    .wrap{padding:16px 13px 48px}
+    header{padding:20px 18px;border-radius:16px}
+    header h1{font-size:18px}
+    header p{font-size:12px}
+    .livestamp{position:static;display:inline-block;margin-top:12px}
+    .expbtn{position:static;display:inline-block;margin-top:10px;right:auto;bottom:auto}
+    .kpis{grid-template-columns:1fr 1fr;gap:10px}
+    .kpi{padding:13px 14px}
+    .kpi .n{font-size:20px}
+    .sec{margin-top:18px}
+    /* let wide tables scroll sideways instead of overflowing the page */
+    .panel{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    table{min-width:540px}
+    .launch{padding:18px 16px;gap:13px}
+    .launch .eic{width:42px;height:42px;font-size:20px}
+    .launch b{font-size:14.5px}
+    .scrollnav{right:10px;bottom:10px;gap:7px}
+    .scrollnav button{width:38px;height:38px;font-size:15px}
+    .mavg{font-size:18px}
+    /* tooltips can't be hovered on touch — widen so a tap-hold is readable */
+    .money:hover::after{max-width:78vw;white-space:normal}
+  }
   #app{display:none}
 </style>
 </head>
