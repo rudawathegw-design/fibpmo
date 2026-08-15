@@ -307,6 +307,11 @@
   --ok:#3F9A63;
   --warn:#D9963A;
   --bad:#C4553F;
+  /* gate glass */
+  --card-glass:linear-gradient(152deg,rgba(255,255,255,.86),rgba(255,255,255,.62));
+  --rim-hi:rgba(255,255,255,.95);
+  --spec:rgba(255,255,255,.75);
+  --sheen:rgba(255,255,255,.60);
   /* hover tooltip */
   --tip-bg:rgba(255,255,255,.96);
   --tip-arrow:#fff;
@@ -346,6 +351,10 @@
     --ok:#4E9E6C;
     --warn:#C9902F;
     --bad:#BD5B48;
+    --card-glass:linear-gradient(152deg,rgba(255,255,255,.10),rgba(255,255,255,.035));
+    --rim-hi:rgba(255,255,255,.16);
+    --spec:rgba(255,255,255,.10);
+    --sheen:rgba(255,255,255,.13);
     --tip-bg:rgba(37,42,45,.97);
     --tip-arrow:#252A2D;
     --tip-ink:#E4E4DC;
@@ -546,17 +555,46 @@ footer{color:var(--muted)}
 .bar-anim.in{transform:scaleX(1);transition:transform .9s var(--ease);transition-delay:var(--d,0s)}
 
 /* ── gate ── */
-#pw-overlay{background:
+/* Short laptop screens: let the card scroll rather than be clipped by the
+   centring grid. */
+#pw-overlay{overflow:auto;align-content:center;
+  background:
     radial-gradient(900px 600px at 50% -12%,var(--glow-a),transparent 60%),
     radial-gradient(760px 480px at 92% 112%,var(--glow-b),transparent 58%),
     repeating-linear-gradient(0deg,var(--grid-line) 0 1px,transparent 1px 88px),
     repeating-linear-gradient(90deg,var(--grid-line) 0 1px,transparent 1px 88px),
     linear-gradient(168deg,var(--ground),var(--ground-2))}
-#pw-card{background:var(--surface);border:1px solid var(--rim);
-  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
-  box-shadow:var(--shadow-hi),var(--inner-rim);overflow:hidden}
-#pw-card::before{content:"";position:absolute;left:0;right:0;top:0;height:40%;
-  background:var(--gloss);pointer-events:none}
+/* Two slow aurora blobs drift behind the card, so the frosted glass has
+   something moving to refract instead of a flat wash. */
+#pw-overlay::before,#pw-overlay::after{content:"";position:absolute;border-radius:50%;
+  pointer-events:none;filter:blur(70px);opacity:.55}
+#pw-overlay::before{width:46vmin;height:46vmin;left:12%;top:14%;
+  background:radial-gradient(circle,var(--brand),transparent 66%);animation:drift1 19s ease-in-out infinite}
+#pw-overlay::after{width:38vmin;height:38vmin;right:10%;bottom:12%;
+  background:radial-gradient(circle,var(--gold),transparent 66%);animation:drift2 23s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:none}50%{transform:translate(7vmin,5vmin) scale(1.12)}}
+@keyframes drift2{0%,100%{transform:none}50%{transform:translate(-6vmin,-4vmin) scale(1.1)}}
+@media(max-width:640px){#pw-overlay::before,#pw-overlay::after{opacity:.4}}
+
+#pw-card{background:var(--card-glass);border:1px solid var(--rim);border-radius:28px;
+  padding:38px 40px 26px;
+  -webkit-backdrop-filter:blur(30px) saturate(1.7);backdrop-filter:blur(30px) saturate(1.7);
+  box-shadow:
+    0 40px 90px -34px rgba(20,44,38,.42),
+    0 2px 6px rgba(20,44,38,.06),
+    inset 0 1px 0 var(--rim-hi),
+    inset 0 -20px 40px -34px rgba(20,44,38,.30);
+  overflow:hidden;isolation:isolate}
+/* specular pool in the top-left, the way light actually lands on glass */
+#pw-card::before{content:"";position:absolute;left:-20%;right:-20%;top:-60%;height:120%;
+  background:radial-gradient(ellipse 46% 52% at 32% 68%,var(--spec),transparent 70%);
+  pointer-events:none;z-index:0}
+/* one slow sheen sweep, then it rests */
+#pw-card::after{content:"";position:absolute;top:-60%;bottom:-60%;width:26%;left:-40%;z-index:0;
+  pointer-events:none;transform:rotate(12deg);
+  background:linear-gradient(90deg,transparent,var(--sheen),transparent);
+  animation:sheen 2.6s 1s var(--ease) both}
+@keyframes sheen{to{left:130%}}
 #pw-card>*{position:relative;z-index:1}
 #pw-badge{color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,transparent);
   border-color:color-mix(in srgb,var(--brand) 32%,transparent)}
@@ -568,12 +606,33 @@ footer{color:var(--muted)}
   border:1px solid color-mix(in srgb,var(--brand) 40%,transparent);animation:halo 2.8s ease-out infinite}
 @keyframes halo{0%{transform:scale(.92);opacity:.9}100%{transform:scale(1.25);opacity:0}}
 #pw-mark{width:46px;height:46px;margin:0 auto 14px;background:var(--fib-logo) center/contain no-repeat;opacity:.9}
-#pw-inp{background:var(--surface-2);border-color:var(--hair);color:var(--ink)}
-#pw-inp:focus{border-color:var(--brand);background:var(--surface-solid);
-  box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 18%,transparent)}
+#pw-inp{background:var(--surface-2);border:1px solid var(--rim);color:var(--ink);
+  border-radius:14px;padding:14px 16px;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:inset 0 1px 2px rgba(20,44,38,.06),inset 0 1px 0 var(--rim-hi)}
+#pw-inp:hover{border-color:color-mix(in srgb,var(--brand) 40%,transparent)}
+#pw-inp:focus{border-color:var(--brand);background:var(--surface);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 16%,transparent),inset 0 1px 0 var(--rim-hi)}
 #pw-inp::placeholder{color:var(--muted)}
-#pw-btn{background:linear-gradient(135deg,var(--brand),var(--brand-d))}
-#pw-err{color:var(--bad)}#pw-foot{color:var(--muted)}
+#pw-btn{background:linear-gradient(135deg,var(--brand),var(--brand-d));border-radius:14px;padding:14px;
+  position:relative;overflow:hidden;
+  box-shadow:0 14px 30px -14px rgba(20,44,38,.65),inset 0 1px 0 rgba(255,255,255,.28)}
+#pw-btn::after{content:"";position:absolute;top:0;bottom:0;width:34%;left:-45%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.32),transparent);
+  transition:left .6s var(--ease)}
+#pw-btn:hover::after{left:120%}
+#pw-err{color:var(--bad)}
+/* footer: owner line, then the build stamp on its own hairline-separated row */
+#pw-foot{color:var(--muted);margin-top:22px;padding-top:14px;
+  border-top:1px solid var(--hair);font-size:11.5px;letter-spacing:.02em}
+#pw-build{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 9px;margin-top:9px;
+  font-size:10.5px;letter-spacing:.06em;color:var(--muted)}
+#pw-build .v{font-weight:800;letter-spacing:.08em;color:var(--brand);
+  background:color-mix(in srgb,var(--brand) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--brand) 28%,transparent);
+  border-radius:20px;padding:3px 9px}
+#pw-build .rel{font-weight:700;color:var(--ink-soft)}
+#pw-build .dot{opacity:.45}
 .shake{animation:shake .4s}
 @keyframes shake{0%,100%{transform:none}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
 
@@ -648,7 +707,14 @@ footer{color:var(--muted)}
              onkeydown="if(event.key==='Enter')checkPw()">
       <button id="pw-btn" onclick="checkPw()">Unlock dashboard →</button>
       <div id="pw-err"></div>
-      <div id="pw-foot">First Iraq Bank · PMO</div>
+      <div id="pw-foot">First Iraq Bank · PMO
+        <div id="pw-build">
+          <span class="v">v2.1</span>
+          <span class="rel">Emerald Glass</span>
+          <span class="dot">·</span>
+          <span>Updated 16 Aug 2026</span>
+        </div>
+      </div>
     </div>
   </div>
 
