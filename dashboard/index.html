@@ -307,7 +307,12 @@
   --ok:#3F9A63;
   --warn:#D9963A;
   --bad:#C4553F;
-  --head-grad:linear-gradient(118deg,#4F9D8B 0%,#3A7D6E 55%,#2F6B5E 78%,#8E5540 130%);
+  /* hover tooltip */
+  --tip-bg:rgba(255,255,255,.96);
+  --tip-arrow:#fff;
+  --tip-ink:#3D3929;
+  --tip-brd:rgba(61,57,41,.14);
+  --head-grad:linear-gradient(122deg,#5CAB96 0%,#438976 46%,#31685B 82%,#2A5A4F 100%);
   --ease:cubic-bezier(.22,1,.36,1);
 }
 :root{color-scheme:light}
@@ -341,7 +346,11 @@
     --ok:#4E9E6C;
     --warn:#C9902F;
     --bad:#BD5B48;
-    --head-grad:linear-gradient(118deg,#2E6357 0%,#274F47 58%,#3A2E28 130%);
+    --tip-bg:rgba(37,42,45,.97);
+    --tip-arrow:#252A2D;
+    --tip-ink:#E4E4DC;
+    --tip-brd:rgba(255,255,255,.14);
+    --head-grad:linear-gradient(122deg,#2F6357 0%,#264F46 52%,#1E3E38 100%);
 }
 
 /* ── ground: soft glow over a fine engineering grid ── */
@@ -359,15 +368,20 @@ body{
   transition:background-color .4s ease,color .3s ease}
 
 /* ── header ── */
+/* Deep, quiet teal — no grid, no stripes. The ground carries the grid; the
+   header is the one solid surface that sits on top of it. */
 header{background:var(--head-grad);border:1px solid var(--rim);
-  box-shadow:0 24px 56px -26px rgba(20,44,38,.62),var(--inner-rim)}
+  box-shadow:0 24px 56px -26px rgba(20,44,38,.62),var(--inner-rim);
+  display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px;padding:24px 28px}
 header::before{content:"";position:absolute;inset:0;pointer-events:none;
-  background:
-    repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 1px,transparent 1px 46px),
-    linear-gradient(180deg,rgba(255,255,255,.16),transparent 58%)}
-header::after{width:280px;height:280px;right:-70px;top:-90px;
-  background:radial-gradient(circle,rgba(255,255,255,.16),transparent 66%)}
-.brandrow,.livestamp,.expbtn{position:relative;z-index:2}
+  background:linear-gradient(180deg,rgba(255,255,255,.14),transparent 60%)}
+header::after{width:300px;height:300px;right:-80px;top:-100px;
+  background:radial-gradient(circle,rgba(255,255,255,.13),transparent 68%)}
+/* Lay the stamp and the export button out in flow so they can never land on
+   top of the title the way absolute positioning did. */
+.brandrow{position:relative;z-index:2;flex:1 1 300px;min-width:0}
+.livestamp{position:relative;z-index:2;right:auto;top:auto;margin-left:auto;flex:0 0 auto}
+.expbtn{position:relative;z-index:2;right:auto;bottom:auto;flex:0 0 auto}
 /* real FIB mark instead of the "FIB" text block */
 .logo{width:52px;height:52px;border-radius:14px;background:#fff var(--fib-logo) center/64% no-repeat;
   color:transparent;font-size:0;box-shadow:0 10px 24px -12px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.7);
@@ -393,7 +407,10 @@ header h1{font-size:23px}
 .kpi::before,.launch::before,.mcard::before{content:"";position:absolute;left:0;right:0;top:0;height:46%;
   border-radius:18px 18px 0 0;background:var(--gloss);pointer-events:none;z-index:0}
 .kpi>*,.launch>*,.mcard>*{position:relative;z-index:1}
-.kpi{padding:18px 20px;overflow:hidden}
+/* No overflow clipping here: the KPI values carry hover tooltips that have to
+   escape the card. The gloss band is rounded to match instead. */
+.kpi{padding:18px 20px}
+.kpi:hover{z-index:20}
 /* accent spine that fills in on hover */
 .kpi::after{content:"";position:absolute;left:0;top:14%;bottom:14%;width:3px;border-radius:0 3px 3px 0;
   background:linear-gradient(180deg,var(--brand),var(--gold));transform:scaleY(0);transform-origin:center;
@@ -434,14 +451,22 @@ header h1{font-size:23px}
 .chip.all b{background:rgba(255,255,255,.22);color:#fff}
 .chip.off{opacity:.42;background:var(--surface-2)}
 
-/* tables */
-.panel{overflow:hidden}
+/* tables — overflow stays visible so amount tooltips are not cut off at the
+   panel edge; the rounded corners come from clipping the table itself. */
+.panel{overflow:visible}
+/* Corners are rounded per corner cell, not by clipping the table — clipping
+   would swallow the amount tooltips again. */
+.panel table thead th:first-child{border-top-left-radius:18px}
+.panel table thead th:last-child{border-top-right-radius:18px}
+.panel table tr:last-child td:first-child{border-bottom-left-radius:18px}
+.panel table tr:last-child td:last-child{border-bottom-right-radius:18px}
 table{font-size:13.5px}
 th{background:linear-gradient(180deg,rgba(255,255,255,.10),transparent);color:var(--muted);
   border-bottom:1px solid var(--hair);letter-spacing:.09em}
 td{border-top:1px solid var(--hair);color:var(--ink-soft)}
 .pn{color:var(--ink)}
-tr:hover td{background:color-mix(in srgb,var(--brand) 7%,transparent)}
+tr:hover td{background:color-mix(in srgb,var(--brand) 13%,transparent)}
+tbody tr{transition:background .18s ease}
 .totrow td{background:color-mix(in srgb,var(--brand) 10%,transparent);border-top:2px solid var(--hair);color:var(--ink)}
 td:has(.mv.paid),td:has(.mv.zero){background:color-mix(in srgb,var(--ok) 8%,transparent)}
 td:has(.mv.rem){background:color-mix(in srgb,var(--bad) 8%,transparent)}
@@ -458,9 +483,15 @@ td:has(.mv.rem){background:color-mix(in srgb,var(--bad) 8%,transparent)}
 :root[data-theme="dark"] tr.stage-pending td{background:rgba(201,144,47,.16)!important;color:#E3C689}
 :root[data-theme="dark"] tr.stage-done:hover td{background:rgba(78,158,108,.24)!important}
 :root[data-theme="dark"] tr.stage-pending:hover td{background:rgba(201,144,47,.24)!important}
-.money:hover::after{background:linear-gradient(160deg,#2B2F2C,#1E2220);color:#EFEDE4;
-  border-color:color-mix(in srgb,var(--brand) 55%,transparent)}
-.money:hover::before{background:#1E2220;border-color:color-mix(in srgb,var(--brand) 55%,transparent)}
+/* The tooltip follows the theme now: a light card on the light page, a dark
+   one in dark mode — instead of a black slab in both. */
+.money{z-index:1}
+.money:hover{z-index:60}
+.money:hover::after{z-index:60;background:var(--tip-bg);color:var(--tip-ink);
+  border:1px solid var(--tip-brd);box-shadow:var(--shadow-hi);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.money:hover::before{z-index:61;background:var(--tip-arrow);
+  border-right:1px solid var(--tip-brd);border-bottom:1px solid var(--tip-brd)}
 
 /* ── document / template tiles: even auto-fit rows, no orphan card ── */
 .launchers{grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
@@ -576,6 +607,11 @@ footer{color:var(--muted)}
 :root[data-theme="dark"] .fabtn .ic-moon{display:none}
 
 @media(max-width:640px){
+  header{padding:20px 18px}
+  .livestamp{margin-left:0}
+  /* wide tables scroll sideways again; tooltips are hover-only, so clipping
+     them on a touch screen costs nothing */
+  .panel{overflow-x:auto;overflow-y:hidden}
   .scrollnav{right:12px;bottom:12px;gap:8px}
   .scrollnav button,.fabtn{width:42px;height:42px;font-size:15px}
   .launchers{grid-template-columns:1fr}
@@ -701,8 +737,17 @@ footer{color:var(--muted)}
       b.classList.add('in');
     });
   }
+  /* The "Open embedded Excel" tile duplicates the Projects List launcher, so
+     it is dropped here. The markup lives inside the encrypted payload, hence
+     the removal by label rather than by editing the source. */
+  function dropRedundantTiles(){
+    document.querySelectorAll('.launch').forEach(function(el){
+      if(/open\s+embedded\s+excel/i.test(el.textContent || '')) el.remove();
+    });
+  }
   function enhance(){
     try{ addThemeToggle(); }catch(e){}
+    try{ dropRedundantTiles(); }catch(e){}
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
     if(reduce || !('IntersectionObserver' in window)) return;
 
@@ -718,6 +763,7 @@ footer{color:var(--muted)}
     // The live-sheet script re-renders the manager cards and tables after its
     // fetch, so decorate() runs again on every mutation, not just once.
     function decorate(){
+      dropRedundantTiles();
       document.querySelectorAll('.pbar>span:not(.bar-anim)').forEach(function(s){ s.classList.add('bar-anim'); });
       REVEAL_SEL.forEach(function(sel){
         document.querySelectorAll(sel).forEach(function(el, i){
