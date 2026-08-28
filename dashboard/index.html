@@ -787,6 +787,7 @@ footer{color:var(--muted)}
 </head>
 <body>
   <style>
+    #otp-step1{position:relative;z-index:20}
     .otp-dd{position:relative}
     .otp-dd-trigger{width:100%;display:flex;align-items:center;gap:11px;border:1px solid var(--rim);border-radius:15px;
       background:var(--surface-2);color:var(--ink);font-size:16px;font-weight:600;font-family:inherit;padding:16px 16px;cursor:pointer;
@@ -799,13 +800,15 @@ footer{color:var(--muted)}
     .otp-dd.open .otp-dd-chev{transform:rotate(180deg)}
     .otp-dd-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .otp-dd-label.ph{color:var(--muted);font-weight:500}
-    .otp-dd-panel{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:60;background:var(--surface);
+    .otp-dd-panel{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:60;background:#F6FAF8;
       border:1px solid var(--rim);border-radius:16px;padding:6px;
-      box-shadow:0 26px 54px -22px rgba(20,44,38,.45),inset 0 1px 0 var(--rim-hi);
-      -webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);
+      box-shadow:0 26px 54px -22px rgba(20,44,38,.5),inset 0 1px 0 var(--rim-hi);
       max-height:0;overflow:hidden;opacity:0;transform:translateY(-6px) scale(.99);transform-origin:top;pointer-events:none;
-      transition:opacity .18s,transform .18s,max-height .18s}
-    .otp-dd.open .otp-dd-panel{max-height:352px;overflow:auto;opacity:1;transform:none;pointer-events:auto}
+      transition:opacity .18s,transform .18s,max-height .2s}
+    .otp-dd.open .otp-dd-panel{max-height:min(244px,44vh);overflow-y:auto;opacity:1;transform:none;pointer-events:auto}
+    .otp-dd-panel::-webkit-scrollbar{width:9px}
+    .otp-dd-panel::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--brand) 38%,transparent);border-radius:9px;border:2px solid #F6FAF8}
+    .otp-dd-panel::-webkit-scrollbar-track{background:transparent}
     .otp-dd-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;cursor:pointer;
       font-size:15px;font-weight:600;color:var(--ink);transition:background .14s}
     .otp-dd-item+.otp-dd-item{border-top:1px solid var(--hair)}
