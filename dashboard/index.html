@@ -787,16 +787,34 @@ footer{color:var(--muted)}
 </head>
 <body>
   <style>
-    .otp-select{width:100%;border:1px solid var(--rim);border-radius:15px;background:var(--surface-2);color:var(--ink);
-      font-size:16px;font-weight:600;font-family:inherit;padding:17px 48px 17px 48px;outline:none;cursor:pointer;transition:.2s;line-height:1.2;
-      appearance:none;-webkit-appearance:none;
-      -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-      box-shadow:inset 0 1px 2px rgba(20,44,38,.06),inset 0 1px 0 var(--rim-hi);
-      background-repeat:no-repeat,no-repeat;background-position:left 16px center,right 16px center;
-      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%230C8B71' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='4'/><path d='M4 21c0-3.7 3.6-6 8-6s8 2.3 8 6'/></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230C8B71' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>")}
-    .otp-select:hover{border-color:color-mix(in srgb,var(--brand) 42%,transparent);background-color:var(--surface)}
-    .otp-select:focus{border-color:var(--brand);background-color:var(--surface);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 16%,transparent),inset 0 1px 0 var(--rim-hi)}
-    .otp-select option{color:#1E2521;font-weight:600;background:#fff}
+    .otp-dd{position:relative}
+    .otp-dd-trigger{width:100%;display:flex;align-items:center;gap:11px;border:1px solid var(--rim);border-radius:15px;
+      background:var(--surface-2);color:var(--ink);font-size:16px;font-weight:600;font-family:inherit;padding:16px 16px;cursor:pointer;
+      transition:.2s;text-align:left;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+      box-shadow:inset 0 1px 2px rgba(20,44,38,.06),inset 0 1px 0 var(--rim-hi)}
+    .otp-dd-trigger:hover{border-color:color-mix(in srgb,var(--brand) 42%,transparent);background:var(--surface)}
+    .otp-dd.open .otp-dd-trigger{border-color:var(--brand);background:var(--surface);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 16%,transparent),inset 0 1px 0 var(--rim-hi)}
+    .otp-dd-ic,.otp-dd-chev{color:var(--brand);display:flex;flex:0 0 auto}
+    .otp-dd-chev{transition:transform .2s}
+    .otp-dd.open .otp-dd-chev{transform:rotate(180deg)}
+    .otp-dd-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .otp-dd-label.ph{color:var(--muted);font-weight:500}
+    .otp-dd-panel{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:60;background:var(--surface);
+      border:1px solid var(--rim);border-radius:16px;padding:6px;
+      box-shadow:0 26px 54px -22px rgba(20,44,38,.45),inset 0 1px 0 var(--rim-hi);
+      -webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);
+      max-height:0;overflow:hidden;opacity:0;transform:translateY(-6px) scale(.99);transform-origin:top;pointer-events:none;
+      transition:opacity .18s,transform .18s,max-height .18s}
+    .otp-dd.open .otp-dd-panel{max-height:352px;overflow:auto;opacity:1;transform:none;pointer-events:auto}
+    .otp-dd-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;cursor:pointer;
+      font-size:15px;font-weight:600;color:var(--ink);transition:background .14s}
+    .otp-dd-item+.otp-dd-item{border-top:1px solid var(--hair)}
+    .otp-dd-item:hover{background:color-mix(in srgb,var(--brand) 12%,transparent);border-color:transparent}
+    .otp-dd-item.sel{background:color-mix(in srgb,var(--brand) 15%,transparent)}
+    .otp-dd-av{width:32px;height:32px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
+      font-size:12px;font-weight:800;color:#fff;letter-spacing:.02em;background:linear-gradient(135deg,var(--brand),var(--brand-d));
+      box-shadow:0 4px 10px -4px rgba(12,90,74,.5)}
+    .otp-dd-empty{padding:13px 12px;color:var(--muted);font-size:13px;text-align:center}
     #pw-pagefoot{position:fixed;left:0;right:0;bottom:16px;z-index:51;display:flex;align-items:center;justify-content:center;
       flex-wrap:wrap;gap:6px 9px;font-size:11px;letter-spacing:.06em;color:var(--muted);font-family:'Inter',system-ui,sans-serif}
     #pw-pagefoot .v{font-weight:800;letter-spacing:.08em;color:var(--brand);background:color-mix(in srgb,var(--brand) 13%,transparent);
@@ -824,9 +842,17 @@ footer{color:var(--muted)}
       <div id="otp-step1">
         <h2>Email Verification</h2>
         <p>Select your name. A one-time code will be sent to your registered email address.</p>
-        <select id="otp-name" class="otp-select" aria-label="Your name">
-          <option value="">Loading names…</option>
-        </select>
+        <div id="otp-dd" class="otp-dd">
+          <div id="otp-dd-trigger" class="otp-dd-trigger" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false"
+               onclick="toggleDD()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDD();}">
+            <span class="otp-dd-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-3.7 3.6-6 8-6s8 2.3 8 6"/></svg></span>
+            <span id="otp-dd-label" class="otp-dd-label ph">— Select your name —</span>
+            <span class="otp-dd-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+          </div>
+          <div id="otp-dd-panel" class="otp-dd-panel" role="listbox">
+            <div class="otp-dd-empty">Loading names…</div>
+          </div>
+        </div>
         <button id="pw-btn" onclick="sendCode()">Send email code →</button>
         <div class="otp-note">🔒 Please choose <b>your own</b> name only. Picking someone else just
           sends a code to their inbox — it will not let you in, and they will receive an unexpected email.</div>
@@ -1016,22 +1042,46 @@ footer{color:var(--muted)}
   function shake(){ var c=$('pw-card'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
   function showErr(msg){ var e=$('pw-err'); e.textContent=msg; if(msg) setTimeout(()=>{ if(e.textContent===msg) e.textContent=''; }, 4000); }
 
+  /* ── custom name dropdown ── */
+  let selectedName = '';
+  function initials(n){ const p=String(n).trim().split(/\s+/);
+    return (((p[0]||'')[0]||'')+((p.length>1?p[p.length-1]:'')[0]||'')).toUpperCase() || '?'; }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function toggleDD(force){
+    const dd=$('otp-dd'); if(!dd) return;
+    const open = force===undefined ? !dd.classList.contains('open') : force;
+    dd.classList.toggle('open', open);
+    $('otp-dd-trigger').setAttribute('aria-expanded', open?'true':'false');
+  }
+  function pickName(n){
+    selectedName = n;
+    const lbl=$('otp-dd-label'); lbl.textContent=n; lbl.classList.remove('ph');
+    document.querySelectorAll('#otp-dd-panel .otp-dd-item').forEach(el=>el.classList.toggle('sel', el.dataset.name===n));
+    toggleDD(false); $('pw-err').textContent='';
+  }
+  document.addEventListener('click', e=>{ const dd=$('otp-dd'); if(dd && !dd.contains(e.target)) toggleDD(false); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') toggleDD(false); });
+
   async function loadNames(){
-    var sel = $('otp-name');
+    const panel=$('otp-dd-panel');
     try {
       const r = await fetch(OTP_API + '/api/users');
       const d = await r.json();
-      sel.innerHTML = '<option value="">— Select your name —</option>' +
-        (d.names||[]).map(n => `<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+      const names = d.names||[];
+      if(!names.length){ panel.innerHTML='<div class="otp-dd-empty">No names available</div>'; return; }
+      panel.innerHTML = names.map(n =>
+        `<div class="otp-dd-item" role="option" data-name="${esc(n)}"><span class="otp-dd-av">${esc(initials(n))}</span><span>${esc(n)}</span></div>`
+      ).join('');
+      panel.querySelectorAll('.otp-dd-item').forEach(it => it.addEventListener('click', ()=>pickName(it.dataset.name)));
     } catch(e){
-      sel.innerHTML = '<option value="">Could not load names — check connection</option>';
+      panel.innerHTML='<div class="otp-dd-empty">Could not load names — check connection</div>';
     }
   }
 
   async function sendCode(ev){
     if(ev) ev.preventDefault();
-    const name = $('otp-name').value;
-    if(!name){ showErr('Please select your name first.'); shake(); return; }
+    const name = selectedName;
+    if(!name){ showErr('Please select your name first.'); shake(); toggleDD(true); return; }
     const btn = $('pw-btn'); btn.disabled = true; showErr(''); $('pw-err').textContent = 'Sending code…';
     try {
       const r = await fetch(OTP_API + '/api/send', {
@@ -1061,7 +1111,7 @@ footer{color:var(--muted)}
   }
 
   async function verifyCode(){
-    const name = $('otp-name').value;
+    const name = selectedName;
     const code = $('pw-inp').value.trim();
     if(code.length < 4){ showErr('Enter the 6-digit code.'); return; }
     const btn = $('pw-btn2'); btn.disabled = true; $('pw-err').textContent = 'Verifying…';
