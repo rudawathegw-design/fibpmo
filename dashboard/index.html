@@ -786,17 +786,55 @@ footer{color:var(--muted)}
 </script>
 </head>
 <body>
+  <style>
+    .otp-select{width:100%;border:1.5px solid #E0DCD1;border-radius:11px;background:#FAF9F5;color:var(--ink);
+      font-size:15px;font-family:inherit;padding:12px 15px;outline:none;cursor:pointer;transition:.18s;
+      appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%233A7D6E' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+      background-repeat:no-repeat;background-position:right 15px center}
+    .otp-select:hover{border-color:#E5B39E}
+    .otp-select:focus{border-color:#4F9D8B;background-color:#fff;box-shadow:0 0 0 4px rgba(79,157,139,.16)}
+    .otp-note{margin-top:16px;font-size:12px;line-height:1.55;color:#8a6d3b;background:#FDF6E7;
+      border:1px solid #F0E2BD;border-radius:11px;padding:11px 13px;text-align:left}
+    .otp-note b{color:#7a5a1e}
+    .otp-actions{display:flex;justify-content:space-between;margin-top:16px;font-size:12.5px}
+    .otp-actions a{color:var(--fib2);text-decoration:none;font-weight:600}
+    .otp-actions a:hover{text-decoration:underline}
+    #pw-btn2{width:100%;margin-top:12px;background:linear-gradient(135deg,#4F9D8B,#3A7D6E);color:#fff;font-weight:800;
+      font-size:14px;border:none;border-radius:11px;padding:13px;cursor:pointer;font-family:'Sora',sans-serif;
+      transition:transform .2s,box-shadow .2s,filter .2s}
+    #pw-btn2:hover{transform:translateY(-2px);box-shadow:0 12px 28px -10px rgba(58,125,110,.55);filter:brightness(1.06)}
+    #pw-btn[disabled],#pw-btn2[disabled]{opacity:.6;cursor:progress;transform:none;box-shadow:none}
+  </style>
   <div id="pw-overlay">
     <div id="pw-card">
       <div id="pw-mark" aria-hidden="true"></div>
-      <div id="pw-badge">Step 2 of 2 · Second security code</div>
+      <div id="pw-badge">Step 2 of 2 · Email verification</div>
       <div id="pw-lock">🔒</div>
-      <h2>Second Security Code</h2>
-      <p>You've passed the first check.<br>Enter the second security code to open the PMO dashboard.</p>
-      <input id="pw-inp" type="password" placeholder="Second security code" autofocus
-             autocomplete="one-time-code" name="otp-code" data-lpignore="true"
-             onkeydown="if(event.key==='Enter')checkPw()">
-      <button id="pw-btn" onclick="checkPw()">Unlock dashboard →</button>
+
+      <div id="otp-step1">
+        <h2>Email Verification</h2>
+        <p>Select your name. A one-time code will be sent to your registered email address.</p>
+        <select id="otp-name" class="otp-select" aria-label="Your name">
+          <option value="">Loading names…</option>
+        </select>
+        <button id="pw-btn" onclick="sendCode()">Send email code →</button>
+        <div class="otp-note">🔒 Please choose <b>your own</b> name only. Picking someone else just
+          sends a code to their inbox — it will not let you in, and they will receive an unexpected email.</div>
+      </div>
+
+      <div id="otp-step2" class="hide">
+        <h2>Enter your code</h2>
+        <p id="otp-sentmsg">We sent a 6-digit code to your email.</p>
+        <input id="pw-inp" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit code"
+               autocomplete="one-time-code" name="otp-code" data-lpignore="true"
+               onkeydown="if(event.key==='Enter')verifyCode()">
+        <button id="pw-btn2" onclick="verifyCode()">Verify &amp; open dashboard →</button>
+        <div class="otp-actions">
+          <a href="#" onclick="backToNames(event)">← Change name</a>
+          <a href="#" id="otp-resend" onclick="sendCode(event)">Resend code</a>
+        </div>
+      </div>
+
       <div id="pw-err"></div>
       <div id="pw-foot">First Iraq Bank · PMO
         <div id="pw-build">
@@ -961,31 +999,100 @@ footer{color:var(--muted)}
     }, 9000);
   }
 
-  async function checkPw(){
-    const inp = document.getElementById('pw-inp');
-    const err = document.getElementById('pw-err');
-    const pw = inp.value; if(!pw) return;
-    err.textContent = 'Unlocking…';
+  /* ── WhatsApp OTP gate ────────────────────────────────────────────────
+     Deployed Cloudflare Worker base URL (see /otp-worker). No trailing slash. */
+  const OTP_API = 'https://fibpmo-otp.rudaw-a-the-gw.workers.dev';
+
+  const $ = id => document.getElementById(id);
+  function shake(){ var c=$('pw-card'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
+  function showErr(msg){ var e=$('pw-err'); e.textContent=msg; if(msg) setTimeout(()=>{ if(e.textContent===msg) e.textContent=''; }, 4000); }
+
+  async function loadNames(){
+    var sel = $('otp-name');
+    try {
+      const r = await fetch(OTP_API + '/api/users');
+      const d = await r.json();
+      sel.innerHTML = '<option value="">— Select your name —</option>' +
+        (d.names||[]).map(n => `<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+    } catch(e){
+      sel.innerHTML = '<option value="">Could not load names — check connection</option>';
+    }
+  }
+
+  async function sendCode(ev){
+    if(ev) ev.preventDefault();
+    const name = $('otp-name').value;
+    if(!name){ showErr('Please select your name first.'); shake(); return; }
+    const btn = $('pw-btn'); btn.disabled = true; showErr(''); $('pw-err').textContent = 'Sending code…';
+    try {
+      const r = await fetch(OTP_API + '/api/send', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name })
+      });
+      const d = await r.json();
+      if(!r.ok || !d.ok){
+        if(d.error==='rate_limited') showErr('Too many requests. Please wait a few minutes and try again.');
+        else if(d.error==='send_failed') showErr('Could not send email. Contact PMO admin.');
+        else showErr('Could not send code. Please try again.');
+        shake(); return;
+      }
+      $('pw-err').textContent = '';
+      $('otp-step1').classList.add('hide');
+      $('otp-step2').classList.remove('hide');
+      $('otp-sentmsg').textContent = 'We sent a 6-digit code to your email (' + (d.to||'your inbox') + '). It expires in 5 minutes.';
+      $('pw-inp').value=''; $('pw-inp').focus();
+    } catch(e){ showErr('Network error. Please try again.'); }
+    finally { btn.disabled = false; }
+  }
+
+  function backToNames(ev){
+    if(ev) ev.preventDefault();
+    $('otp-step2').classList.add('hide');
+    $('otp-step1').classList.remove('hide');
+    $('pw-err').textContent='';
+  }
+
+  async function verifyCode(){
+    const name = $('otp-name').value;
+    const code = $('pw-inp').value.trim();
+    if(code.length < 4){ showErr('Enter the 6-digit code.'); return; }
+    const btn = $('pw-btn2'); btn.disabled = true; $('pw-err').textContent = 'Verifying…';
+    try {
+      const r = await fetch(OTP_API + '/api/verify', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, code })
+      });
+      const d = await r.json();
+      if(!r.ok || !d.ok){
+        if(d.error==='wrong_code') showErr('Incorrect code' + (typeof d.left==='number' ? ' — '+d.left+' attempt(s) left.' : '.'));
+        else if(d.error==='expired') showErr('Code expired. Please request a new one.');
+        else if(d.error==='locked') showErr('Too many wrong attempts. Request a new code.');
+        else showErr('Verification failed. Please try again.');
+        shake(); $('pw-inp').value=''; $('pw-inp').focus(); return;
+      }
+      await unlock(d.secret);
+    } catch(e){ showErr('Network error. Please try again.'); }
+    finally { btn.disabled = false; }
+  }
+
+  /* Decrypts and reveals the dashboard using the passphrase released by the Worker. */
+  async function unlock(pw){
     try {
       const key = await deriveKey(pw, b64(ENC.s));
       const pt  = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64(ENC.i) }, key, b64(ENC.c));
-      document.getElementById('app').innerHTML = new TextDecoder().decode(pt);
-      document.getElementById('pw-overlay').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      var ns = document.getElementById('news-splash');
-      ns.classList.add('on');
+      $('app').innerHTML = new TextDecoder().decode(pt);
+      $('pw-overlay').style.display = 'none';
+      $('app').style.display = 'block';
+      var ns = $('news-splash'); ns.classList.add('on');
       setTimeout(function(){ ns.style.display = 'none'; }, 4000);
-      var rt = document.getElementById('rt-js');
+      var rt = $('rt-js');
       if (rt) { try { (new Function(rt.textContent))(); } catch(e) { console.error('rt', e); } }
       try { enhance(); } catch(e) { console.error('enhance', e); }
     } catch(e){
-      err.textContent = 'Incorrect code — try again.';
-      var card = document.getElementById('pw-card');
-      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
-      inp.value = ''; inp.focus();
-      setTimeout(()=>err.textContent='', 3000);
+      showErr('Could not open the dashboard. Contact PMO admin.');
+      shake();
     }
   }
+
+  loadNames();
 </script>
 </body>
 </html>
