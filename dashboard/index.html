@@ -144,12 +144,13 @@
   .hide{display:none!important}
   footer{margin-top:30px;text-align:center;color:var(--muted);font-size:12px}
 
-  #pw-overlay{position:fixed;inset:0;display:grid;place-items:center;padding:20px;
+  #pw-overlay{position:fixed;inset:0;display:flex;padding:20px;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
     background:radial-gradient(900px 600px at 50% -10%,#F7E9DD 0%,transparent 60%),
                radial-gradient(800px 500px at 90% 110%,#EFE9DC 0%,transparent 60%),
                linear-gradient(160deg,#FAF9F5,#F0EEE6);
     font-family:'Inter',system-ui,sans-serif;z-index:50}
-  #pw-card{position:relative;background:#fff;
+  #pw-card{position:relative;background:#fff;margin:auto;flex:0 0 auto;
     border:1px solid var(--line);border-radius:24px;padding:40px 44px 34px;width:min(500px,94vw);
     text-align:center;box-shadow:0 30px 70px -30px rgba(61,57,41,.35);
     animation:pwIn .7s cubic-bezier(.22,1,.36,1) both}
