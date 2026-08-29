@@ -1207,6 +1207,24 @@ footer{color:var(--muted)}
     finally { btn.disabled = false; }
   }
 
+  // Presence heartbeat: mark this viewer online while the tab is open, and
+  // offline the moment it closes. Powers the "who's online" sign-in log.
+  function startHeartbeat(name, app){
+    function ping(leave){
+      try {
+        var body = JSON.stringify({ name: name, app: app, leave: leave ? 1 : 0 });
+        if (leave && navigator.sendBeacon){
+          navigator.sendBeacon(OTP_API + '/api/ping', new Blob([body], {type:'application/json'})); return;
+        }
+        fetch(OTP_API + '/api/ping', {method:'POST', headers:{'Content-Type':'application/json'}, body: body, keepalive: true}).catch(function(){});
+      } catch(e){}
+    }
+    ping(false);
+    var iv = setInterval(function(){ if (document.visibilityState === 'visible') ping(false); }, 45000);
+    document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') ping(false); });
+    window.addEventListener('pagehide', function(){ clearInterval(iv); ping(true); });
+    window.addEventListener('beforeunload', function(){ ping(true); });
+  }
   async function verifyCode(){
     const name = selectedName;
     const code = $('pw-inp').value.trim();
@@ -1224,6 +1242,7 @@ footer{color:var(--muted)}
         else showErr('Verification failed. Please try again.');
         shake(); $('pw-inp').value=''; $('pw-inp').focus(); return;
       }
+      startHeartbeat(selectedName, 'dashboard');
       await unlock(d.secret);
     } catch(e){ showErr('Network error. Please try again.'); }
     finally { btn.disabled = false; }

@@ -116,7 +116,7 @@
 
 <script>
   var OTP_API = 'https://fibpmo-otp.rudaw-a-the-gw.workers.dev';
-  var _all = [];
+  var _all = [], _online = [];
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function fmt(t){
     try{
@@ -139,6 +139,7 @@
       if(r.status===401){ msg.style.color='#b45309'; msg.textContent='Wrong admin key.'; go.disabled=false; return; }
       var d = await r.json();
       _all = (d.logins||[]);
+      _online = (d.online||[]);
       msg.textContent='';
       document.getElementById('view').style.display='block';
       render();
@@ -153,21 +154,19 @@
     var sent=0, ok=0, fail=0;
     _all.forEach(function(x){ var e=evOf(x); if(e==='send')sent++; else if(e==='fail')fail++; else ok++; });
     var attempts = ok + fail;
-    // Active = distinct names with a successful sign-in in the last 15 minutes.
-    var ONLINE_WINDOW = 15*60;
-    var activeMap = {};
-    _all.forEach(function(x){ if(evOf(x)==='ok' && (now - x.t) <= ONLINE_WINDOW) activeMap[x.name] = Math.max(activeMap[x.name]||0, x.t); });
-    var activeNames = Object.keys(activeMap).sort(function(a,b){return activeMap[b]-activeMap[a];});
+    // Online now = real presence from the Worker: pages that pinged within the
+    // last ~90s. Closing the tab drops the person immediately (leave beacon).
     document.getElementById('stats').innerHTML =
-      tile('on', activeNames.length, 'Active now (15 min)') +
+      tile('on', _online.length, 'Online now') +
       tile('ok', ok, 'Successful sign-ins') +
       tile('try', attempts, 'Connect attempts') +
       tile('sent', sent, 'Codes sent') +
       tile('', fail, 'Wrong-code tries');
-    document.getElementById('online').innerHTML = activeNames.length
-      ? ('<b>Online:</b> ' + activeNames.map(function(n){
-          return '<span class="chip"><span class="dot"></span>'+esc(n)+'</span>'; }).join(''))
-      : '<b>Online:</b> nobody in the last 15 minutes.';
+    document.getElementById('online').innerHTML = _online.length
+      ? ('<b>Online now:</b> ' + _online.map(function(o){
+          return '<span class="chip"><span class="dot"></span>'+esc(o.name)+
+                 ' <span style="opacity:.7;font-weight:600">· '+esc(o.app)+'</span></span>'; }).join(''))
+      : '<b>Online now:</b> nobody is viewing right now.';
     // ── filtered table ────────────────────────────────────────────────────
     var af = document.getElementById('appf').value;
     var ef = document.getElementById('evf').value;
