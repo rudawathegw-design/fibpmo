@@ -805,19 +805,35 @@ footer{color:var(--muted)}
       box-shadow:0 26px 54px -22px rgba(20,44,38,.5),inset 0 1px 0 var(--rim-hi);
       max-height:0;overflow:hidden;opacity:0;transform:translateY(-6px) scale(.99);transform-origin:top;pointer-events:none;
       transition:opacity .18s,transform .18s,max-height .2s}
-    .otp-dd.open .otp-dd-panel{max-height:min(244px,44vh);overflow-y:auto;opacity:1;transform:none;pointer-events:auto}
+    .otp-dd.open .otp-dd-panel{max-height:min(340px,58vh);overflow-y:auto;opacity:1;transform:none;pointer-events:auto}
     .otp-dd-panel::-webkit-scrollbar{width:9px}
     .otp-dd-panel::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--brand) 38%,transparent);border-radius:9px;border:2px solid #F6FAF8}
     .otp-dd-panel::-webkit-scrollbar-track{background:transparent}
-    .otp-dd-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;cursor:pointer;
-      font-size:15px;font-weight:600;color:var(--ink);transition:background .14s}
+    .otp-dd-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;cursor:pointer;
+      font-size:14.5px;font-weight:600;color:var(--ink);transition:background .14s}
     .otp-dd-item+.otp-dd-item{border-top:1px solid var(--hair)}
     .otp-dd-item:hover{background:color-mix(in srgb,var(--brand) 12%,transparent);border-color:transparent}
     .otp-dd-item.sel{background:color-mix(in srgb,var(--brand) 15%,transparent)}
-    .otp-dd-av{width:32px;height:32px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
-      font-size:12px;font-weight:800;color:#fff;letter-spacing:.02em;background:linear-gradient(135deg,var(--brand),var(--brand-d));
+    .otp-dd-av{width:29px;height:29px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
+      font-size:11.5px;font-weight:800;color:#fff;letter-spacing:.02em;background:linear-gradient(135deg,var(--brand),var(--brand-d));
       box-shadow:0 4px 10px -4px rgba(12,90,74,.5)}
     .otp-dd-empty{padding:13px 12px;color:var(--muted);font-size:13px;text-align:center}
+    .otp-dd-req{position:sticky;bottom:-6px;margin:6px -6px -6px;padding:13px 12px;cursor:pointer;text-align:center;
+      font-weight:800;font-size:13.5px;color:#fff;letter-spacing:.02em;background:linear-gradient(135deg,#F0B24B,#E9972B);
+      border-top:1px solid rgba(0,0,0,.06)}
+    .otp-dd-req:hover{filter:brightness(1.05)}
+    /* request-access form */
+    .req-inp{width:100%;border:1px solid var(--rim);border-radius:14px;background:var(--surface-2);color:var(--ink);
+      font-size:15px;font-family:inherit;padding:14px 16px;outline:none;transition:.2s;margin-top:10px;
+      box-shadow:inset 0 1px 2px rgba(20,44,38,.06),inset 0 1px 0 var(--rim-hi)}
+    .req-inp:hover{border-color:color-mix(in srgb,var(--brand) 40%,transparent)}
+    .req-inp:focus{border-color:var(--brand);background:var(--surface);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 16%,transparent)}
+    .req-inp::placeholder{color:var(--muted)}
+    #req-send{width:100%;margin-top:14px;background:linear-gradient(135deg,#F0B24B,#E9972B);color:#fff;font-weight:800;
+      font-size:14px;border:none;border-radius:14px;padding:14px;cursor:pointer;font-family:'Sora',sans-serif;
+      box-shadow:0 12px 26px -12px rgba(233,151,43,.7);transition:transform .2s,filter .2s}
+    #req-send:hover{transform:translateY(-2px);filter:brightness(1.05)}
+    #req-send[disabled]{opacity:.6;cursor:progress;transform:none}
     #pw-pagefoot{position:fixed;left:0;right:0;bottom:16px;z-index:51;display:flex;align-items:center;justify-content:center;
       flex-wrap:wrap;gap:6px 9px;font-size:11px;letter-spacing:.06em;color:var(--muted);font-family:'Inter',system-ui,sans-serif}
     #pw-pagefoot .v{font-weight:800;letter-spacing:.08em;color:var(--brand);background:color-mix(in srgb,var(--brand) 13%,transparent);
@@ -871,6 +887,18 @@ footer{color:var(--muted)}
         <div class="otp-actions">
           <a href="#" onclick="backToNames(event)">← Change name</a>
           <a href="#" id="otp-resend" onclick="sendCode(event)">Resend code</a>
+        </div>
+      </div>
+
+      <div id="otp-req" class="hide">
+        <h2>Request access</h2>
+        <p>Enter your name and email. The PMO officer will review your request and add you if approved.</p>
+        <input id="req-name" class="req-inp" type="text" placeholder="Your full name" autocomplete="name">
+        <input id="req-email" class="req-inp" type="email" placeholder="Your email address" autocomplete="email"
+               onkeydown="if(event.key==='Enter')submitReq()">
+        <button id="req-send" onclick="submitReq()">Send request →</button>
+        <div class="otp-actions" style="justify-content:center">
+          <a href="#" onclick="backFromReq(event)">← Back to sign in</a>
         </div>
       </div>
 
@@ -1074,8 +1102,9 @@ footer{color:var(--muted)}
       if(!names.length){ panel.innerHTML='<div class="otp-dd-empty">No names available</div>'; return; }
       panel.innerHTML = names.map(n =>
         `<div class="otp-dd-item" role="option" data-name="${esc(n)}"><span class="otp-dd-av">${esc(initials(n))}</span><span>${esc(n)}</span></div>`
-      ).join('');
+      ).join('') + `<div class="otp-dd-req" id="otp-dd-req">＋&nbsp; Name not listed? Request access</div>`;
       panel.querySelectorAll('.otp-dd-item').forEach(it => it.addEventListener('click', ()=>pickName(it.dataset.name)));
+      const rq = panel.querySelector('#otp-dd-req'); if(rq) rq.addEventListener('click', openReq);
     } catch(e){
       panel.innerHTML='<div class="otp-dd-empty">Could not load names — check connection</div>';
     }
@@ -1111,6 +1140,46 @@ footer{color:var(--muted)}
     $('otp-step2').classList.add('hide');
     $('otp-step1').classList.remove('hide');
     $('pw-err').textContent='';
+  }
+
+  /* ── request access ── */
+  function openReq(){
+    toggleDD(false);
+    $('otp-step1').classList.add('hide');
+    $('otp-req').classList.remove('hide');
+    $('pw-err').textContent='';
+    setTimeout(()=>$('req-name') && $('req-name').focus(), 60);
+  }
+  function backFromReq(ev){
+    if(ev) ev.preventDefault();
+    $('otp-req').classList.add('hide');
+    $('otp-step1').classList.remove('hide');
+    $('pw-err').textContent='';
+  }
+  async function submitReq(){
+    const name = $('req-name').value.trim();
+    const email = $('req-email').value.trim();
+    if(name.length < 2){ showErr('Please enter your name.'); shake(); return; }
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ showErr('Please enter a valid email address.'); shake(); return; }
+    const btn = $('req-send'); btn.disabled = true; $('pw-err').textContent = 'Sending request…';
+    try {
+      const r = await fetch(OTP_API + '/api/request-access', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, email })
+      });
+      const d = await r.json();
+      if(!r.ok || !d.ok){
+        if(d.error==='rate_limited') showErr('Too many requests. Please try again later.');
+        else showErr('Could not send your request. Please try again.');
+        shake(); return;
+      }
+      $('otp-req').innerHTML =
+        '<div style="font-size:40px;margin:6px 0 10px">✅</div>' +
+        '<h2>Request sent</h2>' +
+        '<p>Thank you, <b>' + name.replace(/[<>&]/g,'') + '</b>. Your access request has been sent to the PMO officer. ' +
+        'You will be contacted at <b>' + email.replace(/[<>&]/g,'') + '</b> once it is reviewed.</p>' +
+        '<div class="otp-actions" style="justify-content:center;margin-top:18px"><a href="#" onclick="location.reload()">← Back to sign in</a></div>';
+    } catch(e){ showErr('Network error. Please try again.'); }
+    finally { btn.disabled = false; }
   }
 
   async function verifyCode(){
