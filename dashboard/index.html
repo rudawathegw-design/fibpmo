@@ -1214,7 +1214,7 @@ footer{color:var(--muted)}
     const btn = $('pw-btn2'); btn.disabled = true; $('pw-err').textContent = 'Verifying…';
     try {
       const r = await fetch(OTP_API + '/api/verify', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, code })
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, code, app:'dashboard' })
       });
       const d = await r.json();
       if(!r.ok || !d.ok){
