@@ -823,6 +823,18 @@ footer{color:var(--muted)}
       font-weight:800;font-size:13.5px;color:#fff;letter-spacing:.02em;background:linear-gradient(135deg,#F0B24B,#E9972B);
       border-top:1px solid rgba(0,0,0,.06)}
     .otp-dd-req:hover{filter:brightness(1.05)}
+    /* Inline, always-visible name list (all names shown on open) */
+    .otp-namelist{border:1px solid var(--rim);border-radius:16px;background:#F6FAF8;padding:6px;
+      box-shadow:inset 0 1px 0 var(--rim-hi);max-height:min(46vh,320px);overflow-y:auto;margin-top:4px;text-align:left}
+    .otp-namelist::-webkit-scrollbar{width:9px}
+    .otp-namelist::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--brand) 38%,transparent);border-radius:9px;border:2px solid #F6FAF8}
+    .otp-namelist::-webkit-scrollbar-track{background:transparent}
+    .otp-nl-empty{padding:14px 12px;color:var(--muted);font-size:13px;text-align:center}
+    .otp-nl-req{margin:10px 0 2px;padding:12px;border-radius:12px;cursor:pointer;text-align:center;
+      font-weight:800;font-size:13.5px;color:#fff;letter-spacing:.02em;
+      background:linear-gradient(135deg,#F0B24B,#E9972B);box-shadow:0 8px 18px -10px rgba(233,151,43,.8)}
+    .otp-nl-req:hover{filter:brightness(1.05)}
+    .otp-nl-req:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
     /* request-access form */
     .req-inp{width:100%;border:1px solid var(--rim);border-radius:14px;background:var(--surface-2);color:var(--ink);
       font-size:15px;font-family:inherit;padding:14px 16px;outline:none;transition:.2s;margin-top:10px;
@@ -861,18 +873,12 @@ footer{color:var(--muted)}
 
       <div id="otp-step1">
         <h2>Email Verification</h2>
-        <p>Select your name. A one-time code will be sent to your registered email address.</p>
-        <div id="otp-dd" class="otp-dd">
-          <div id="otp-dd-trigger" class="otp-dd-trigger" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false"
-               onclick="toggleDD()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDD();}">
-            <span class="otp-dd-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-3.7 3.6-6 8-6s8 2.3 8 6"/></svg></span>
-            <span id="otp-dd-label" class="otp-dd-label ph">— Select your name —</span>
-            <span class="otp-dd-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
-          </div>
-          <div id="otp-dd-panel" class="otp-dd-panel" role="listbox">
-            <div class="otp-dd-empty">Loading names…</div>
-          </div>
+        <p>Tap your name — we'll email a one-time code to your registered address.</p>
+        <div id="otp-namelist" class="otp-namelist" role="listbox" aria-label="Select your name">
+          <div class="otp-nl-empty">Loading names…</div>
         </div>
+        <div class="otp-nl-req" id="otp-nl-req" role="button" tabindex="0" onclick="openReq(event)"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReq(event);}">＋&nbsp; Name not listed? Request access</div>
         <button id="pw-btn" onclick="sendCode()">Send email code →</button>
         <div class="otp-note">🔒 Please choose <b>your own</b> name only. Picking someone else just
           sends a code to their inbox — it will not let you in, and they will receive an unexpected email.</div>
@@ -1098,9 +1104,10 @@ footer{color:var(--muted)}
   }
   function pickName(n){
     selectedName = n;
-    const lbl=$('otp-dd-label'); lbl.textContent=n; lbl.classList.remove('ph');
-    document.querySelectorAll('#otp-dd-panel .otp-dd-item').forEach(el=>el.classList.toggle('sel', el.dataset.name===n));
-    toggleDD(false); $('pw-err').textContent='';
+    document.querySelectorAll('#otp-namelist .otp-dd-item').forEach(el=>{
+      const on = el.dataset.name===n; el.classList.toggle('sel', on); el.setAttribute('aria-selected', on?'true':'false');
+    });
+    $('pw-err').textContent='';
   }
   document.addEventListener('click', e=>{ const dd=$('otp-dd'), p=$('otp-dd-panel');
     if(dd && !dd.contains(e.target) && !(p && p.contains(e.target))) toggleDD(false); });
@@ -1109,26 +1116,28 @@ footer{color:var(--muted)}
   window.addEventListener('scroll', ()=>{ if($('otp-dd') && $('otp-dd').classList.contains('open')) positionPanel(); }, true);
 
   async function loadNames(){
-    const panel=$('otp-dd-panel');
+    const box=$('otp-namelist');
     try {
       const r = await fetch(OTP_API + '/api/users');
       const d = await r.json();
       const names = d.names||[];
-      if(!names.length){ panel.innerHTML='<div class="otp-dd-empty">No names available</div>'; return; }
-      panel.innerHTML = names.map(n =>
-        `<div class="otp-dd-item" role="option" data-name="${esc(n)}"><span class="otp-dd-av">${esc(initials(n))}</span><span>${esc(n)}</span></div>`
-      ).join('') + `<div class="otp-dd-req" id="otp-dd-req">＋&nbsp; Name not listed? Request access</div>`;
-      panel.querySelectorAll('.otp-dd-item').forEach(it => it.addEventListener('click', ()=>pickName(it.dataset.name)));
-      const rq = panel.querySelector('#otp-dd-req'); if(rq) rq.addEventListener('click', openReq);
+      if(!names.length){ box.innerHTML='<div class="otp-nl-empty">No names available</div>'; return; }
+      box.innerHTML = names.map(n =>
+        `<div class="otp-dd-item" role="option" tabindex="0" aria-selected="false" data-name="${esc(n)}"><span class="otp-dd-av">${esc(initials(n))}</span><span>${esc(n)}</span></div>`
+      ).join('');
+      box.querySelectorAll('.otp-dd-item').forEach(it => {
+        it.addEventListener('click', ()=>pickName(it.dataset.name));
+        it.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();pickName(it.dataset.name);} });
+      });
     } catch(e){
-      panel.innerHTML='<div class="otp-dd-empty">Could not load names — check connection</div>';
+      box.innerHTML='<div class="otp-nl-empty">Could not load names — check connection</div>';
     }
   }
 
   async function sendCode(ev){
     if(ev) ev.preventDefault();
     const name = selectedName;
-    if(!name){ showErr('Please select your name first.'); shake(); toggleDD(true); return; }
+    if(!name){ showErr('Please tap your name first.'); shake(); return; }
     const btn = $('pw-btn'); btn.disabled = true; showErr(''); $('pw-err').textContent = 'Sending code…';
     try {
       const r = await fetch(OTP_API + '/api/send', {
