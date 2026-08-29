@@ -49,7 +49,19 @@
   .nm{font-weight:700}
   .mut{color:var(--muted)}
   .foot{color:#9ca69f;font-size:11.5px;text-align:center;margin-top:18px}
-  @media(max-width:520px){ h1{font-size:17px} }
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 2px}
+  .stat{background:#fff;border:1px solid #eef1ef;border-radius:14px;padding:12px 14px}
+  .stat .n{font-size:23px;font-weight:800;line-height:1}
+  .stat .l{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .stat.ok .n{color:#065f46}.stat.try .n{color:#1e40af}.stat.sent .n{color:#b45309}.stat.on .n{color:#0e9f8f}
+  .online{margin:2px 2px 6px;font-size:13px;color:var(--muted)}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;
+    border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;margin:3px 5px 0 0}
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.22)}
+  .pill.ev-ok{background:#ecfdf5;color:#065f46}
+  .pill.ev-send{background:#fff7ed;color:#b45309}
+  .pill.ev-fail{background:#fef2f2;color:#b91c1c}
+  @media(max-width:520px){ h1{font-size:17px} .stat .n{font-size:20px} }
 </style>
 </head>
 <body>
@@ -64,7 +76,7 @@
 
   <div class="card" id="gate-card">
     <div class="gate">
-      <input id="key" type="password" placeholder="Admin key" autocomplete="off"
+      <input id="key" type="password" placeholder="Admin password" autocomplete="off"
              onkeydown="if(event.key==='Enter')load()">
       <button class="btn" id="go" onclick="load()">View log</button>
     </div>
@@ -72,10 +84,18 @@
   </div>
 
   <div id="view" style="display:none">
+    <div class="stats" id="stats"></div>
+    <div class="online" id="online"></div>
     <div class="bar">
       <span class="count" id="count"></span>
       <span class="sub" id="range"></span>
       <span class="spacer"></span>
+      <select class="filter" id="evf" onchange="render()">
+        <option value="">All events</option>
+        <option value="ok">Signed in</option>
+        <option value="send">Code sent</option>
+        <option value="fail">Wrong code</option>
+      </select>
       <select class="filter" id="appf" onchange="render()">
         <option value="">All apps</option>
         <option value="report">Report only</option>
@@ -85,7 +105,7 @@
     </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>#</th><th>Name</th><th>App</th><th>When (Baghdad)</th><th>Country</th><th>IP</th></tr></thead>
+        <thead><tr><th>#</th><th>Event</th><th>Name</th><th>App</th><th>When (Baghdad)</th><th>Country</th><th>IP</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
@@ -125,15 +145,43 @@
     }catch(e){ msg.style.color='#b45309'; msg.textContent='Could not reach the server. Check your connection.'; }
     finally{ go.disabled=false; }
   }
+  var EV = { ok:{cls:'ev-ok',label:'Signed in'}, send:{cls:'ev-send',label:'Code sent'}, fail:{cls:'ev-fail',label:'Wrong code'} };
+  function evOf(x){ return EV[x.ev] ? x.ev : 'ok'; } // older rows had no ev — they were logins
   function render(){
-    var f = document.getElementById('appf').value;
-    var list = f ? _all.filter(function(x){return x.app===f;}) : _all;
+    var now = Math.floor(Date.now()/1000);
+    // ── stats over the whole log ──────────────────────────────────────────
+    var sent=0, ok=0, fail=0;
+    _all.forEach(function(x){ var e=evOf(x); if(e==='send')sent++; else if(e==='fail')fail++; else ok++; });
+    var attempts = ok + fail;
+    // Active = distinct names with a successful sign-in in the last 15 minutes.
+    var ONLINE_WINDOW = 15*60;
+    var activeMap = {};
+    _all.forEach(function(x){ if(evOf(x)==='ok' && (now - x.t) <= ONLINE_WINDOW) activeMap[x.name] = Math.max(activeMap[x.name]||0, x.t); });
+    var activeNames = Object.keys(activeMap).sort(function(a,b){return activeMap[b]-activeMap[a];});
+    document.getElementById('stats').innerHTML =
+      tile('on', activeNames.length, 'Active now (15 min)') +
+      tile('ok', ok, 'Successful sign-ins') +
+      tile('try', attempts, 'Connect attempts') +
+      tile('sent', sent, 'Codes sent') +
+      tile('', fail, 'Wrong-code tries');
+    document.getElementById('online').innerHTML = activeNames.length
+      ? ('<b>Online:</b> ' + activeNames.map(function(n){
+          return '<span class="chip"><span class="dot"></span>'+esc(n)+'</span>'; }).join(''))
+      : '<b>Online:</b> nobody in the last 15 minutes.';
+    // ── filtered table ────────────────────────────────────────────────────
+    var af = document.getElementById('appf').value;
+    var ef = document.getElementById('evf').value;
+    var list = _all.filter(function(x){
+      return (!af || x.app===af) && (!ef || evOf(x)===ef);
+    });
     var tb = document.getElementById('rows'); tb.innerHTML='';
     list.forEach(function(x,i){
       var app = (x.app==='report'||x.app==='dashboard')?x.app:'unknown';
+      var e = evOf(x);
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td class="mut">'+(i+1)+'</td>'+
+        '<td><span class="pill '+EV[e].cls+'">'+EV[e].label+'</span></td>'+
         '<td class="nm">'+esc(x.name)+'</td>'+
         '<td><span class="pill '+app+'">'+app+'</span></td>'+
         '<td>'+esc(fmt(x.t))+'</td>'+
@@ -141,9 +189,12 @@
         '<td class="mut">'+esc(x.ip||'—')+'</td>';
       tb.appendChild(tr);
     });
-    document.getElementById('count').textContent = list.length + ' sign-in' + (list.length===1?'':'s');
+    document.getElementById('count').textContent = list.length + ' event' + (list.length===1?'':'s');
     var latest = _all.length ? fmt(_all[0].t) : '';
     document.getElementById('range').textContent = latest ? ('· latest ' + latest) : '';
+  }
+  function tile(cls, n, label){
+    return '<div class="stat '+cls+'"><div class="n">'+n+'</div><div class="l">'+label+'</div></div>';
   }
 </script>
 </body>

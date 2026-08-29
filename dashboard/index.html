@@ -1141,7 +1141,7 @@ footer{color:var(--muted)}
     const btn = $('pw-btn'); btn.disabled = true; showErr(''); $('pw-err').textContent = 'Sending code…';
     try {
       const r = await fetch(OTP_API + '/api/send', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name })
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, app:'dashboard' })
       });
       const d = await r.json();
       if(!r.ok || !d.ok){
