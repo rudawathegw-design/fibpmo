@@ -1196,6 +1196,7 @@ footer{color:var(--muted)}
         else showErr('Could not send your request. Please try again.');
         shake(); return;
       }
+      $('pw-err').textContent = '';   // clear the "Sending request…" status
       $('otp-req').innerHTML =
         '<div style="font-size:40px;margin:6px 0 10px">✅</div>' +
         '<h2>Request sent</h2>' +
