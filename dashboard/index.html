@@ -800,12 +800,12 @@ footer{color:var(--muted)}
     .otp-dd.open .otp-dd-chev{transform:rotate(180deg)}
     .otp-dd-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .otp-dd-label.ph{color:var(--muted);font-weight:500}
-    .otp-dd-panel{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:60;background:#F6FAF8;
+    .otp-dd-panel{position:fixed;z-index:200;background:#F6FAF8;
       border:1px solid var(--rim);border-radius:16px;padding:6px;
-      box-shadow:0 26px 54px -22px rgba(20,44,38,.5),inset 0 1px 0 var(--rim-hi);
+      box-shadow:0 30px 60px -20px rgba(20,44,38,.55),inset 0 1px 0 var(--rim-hi);
       max-height:0;overflow:hidden;opacity:0;transform:translateY(-6px) scale(.99);transform-origin:top;pointer-events:none;
       transition:opacity .18s,transform .18s,max-height .2s}
-    .otp-dd.open .otp-dd-panel{max-height:min(340px,58vh);overflow-y:auto;opacity:1;transform:none;pointer-events:auto}
+    .otp-dd-panel.open{max-height:min(70vh,440px);overflow-y:auto;opacity:1;transform:none;pointer-events:auto}
     .otp-dd-panel::-webkit-scrollbar{width:9px}
     .otp-dd-panel::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--brand) 38%,transparent);border-radius:9px;border:2px solid #F6FAF8}
     .otp-dd-panel::-webkit-scrollbar-track{background:transparent}
@@ -906,10 +906,10 @@ footer{color:var(--muted)}
       <div id="pw-foot">First Iraq Bank · PMO</div>
     </div>
     <div id="pw-pagefoot">
-      <span class="v">v2.2</span>
+      <span class="v">v2.3</span>
       <span class="rel">Emerald Glass</span>
       <span class="dot">·</span>
-      <span>Updated 28 Aug 2026 · 23:33 · Baghdad</span>
+      <span id="pw-updated">Updated — · Baghdad</span>
     </div>
   </div>
 
@@ -1078,10 +1078,21 @@ footer{color:var(--muted)}
   function initials(n){ const p=String(n).trim().split(/\s+/);
     return (((p[0]||'')[0]||'')+((p.length>1?p[p.length-1]:'')[0]||'')).toUpperCase() || '?'; }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  // Panel is portaled to <body> so it floats OUTSIDE the card (which clips via overflow:hidden).
+  if($('otp-dd-panel') && $('otp-dd-panel').parentElement !== document.body){ document.body.appendChild($('otp-dd-panel')); }
+  function positionPanel(){
+    const t=$('otp-dd-trigger'), p=$('otp-dd-panel'); if(!t||!p) return;
+    const r=t.getBoundingClientRect();
+    p.style.left = r.left + 'px';
+    p.style.top  = (r.bottom + 8) + 'px';
+    p.style.width = r.width + 'px';
+  }
   function toggleDD(force){
-    const dd=$('otp-dd'); if(!dd) return;
+    const dd=$('otp-dd'), p=$('otp-dd-panel'); if(!dd) return;
     const open = force===undefined ? !dd.classList.contains('open') : force;
+    if(open) positionPanel();
     dd.classList.toggle('open', open);
+    if(p) p.classList.toggle('open', open);
     $('otp-dd-trigger').setAttribute('aria-expanded', open?'true':'false');
   }
   function pickName(n){
@@ -1090,8 +1101,11 @@ footer{color:var(--muted)}
     document.querySelectorAll('#otp-dd-panel .otp-dd-item').forEach(el=>el.classList.toggle('sel', el.dataset.name===n));
     toggleDD(false); $('pw-err').textContent='';
   }
-  document.addEventListener('click', e=>{ const dd=$('otp-dd'); if(dd && !dd.contains(e.target)) toggleDD(false); });
+  document.addEventListener('click', e=>{ const dd=$('otp-dd'), p=$('otp-dd-panel');
+    if(dd && !dd.contains(e.target) && !(p && p.contains(e.target))) toggleDD(false); });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') toggleDD(false); });
+  window.addEventListener('resize', ()=>{ if($('otp-dd') && $('otp-dd').classList.contains('open')) positionPanel(); });
+  window.addEventListener('scroll', ()=>{ if($('otp-dd') && $('otp-dd').classList.contains('open')) positionPanel(); }, true);
 
   async function loadNames(){
     const panel=$('otp-dd-panel');
@@ -1224,6 +1238,19 @@ footer{color:var(--muted)}
   }
 
   loadNames();
+
+  /* Auto-stamp the footer with this page's real last-deploy time (Baghdad), so it
+     updates itself on every push — no manual editing. Falls back gracefully. */
+  (function(){
+    var el = $('pw-updated'); if(!el) return;
+    try{
+      var d = new Date(document.lastModified);
+      if(isNaN(d.getTime())) return;
+      var s = new Intl.DateTimeFormat('en-GB',{ timeZone:'Asia/Baghdad', day:'2-digit',
+        month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false }).format(d);
+      el.textContent = 'Updated ' + s + ' · Baghdad';
+    }catch(e){ el.textContent = 'Updated recently'; }
+  })();
 </script>
 </body>
 </html>
