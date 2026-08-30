@@ -882,8 +882,6 @@ footer{color:var(--muted)}
         <div id="otp-namelist" class="otp-namelist" role="listbox" aria-label="Select your name">
           <div class="otp-nl-empty">Loading names…</div>
         </div>
-        <div class="otp-nl-req" id="otp-nl-req" role="button" tabindex="0" onclick="openReq(event)"
-             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReq(event);}">＋&nbsp; Name not listed? Request access</div>
         <button id="pw-btn" onclick="sendCode()" style="display:none">Send email code →</button>
         <div class="otp-note">🔒 Please choose <b>your own</b> name only. Picking someone else just
           sends a code to their inbox — it will not let you in, and they will receive an unexpected email.</div>
@@ -1027,6 +1025,39 @@ footer{color:var(--muted)}
      embed cross-origin, so we open it in a new tab (editable) rather than in a
      full-screen iframe, and relabel the tile to match. */
   var TODO_TRACKER_URL = 'https://docs.google.com/spreadsheets/d/1qCAtj7q71RJ6w_f8h2PBYc1udB2yc0TU/edit?usp=sharing&ouid=105554361602929352914&rtpof=true&sd=true';
+  // Live in-page full-screen embed of the tracker (editable for signed-in users),
+  // mirroring the other Excel tiles rather than opening a new tab.
+  function openTrackerEmbed(url){
+    var ov = document.getElementById('todo-embed');
+    if(!ov){
+      ov = document.createElement('div');
+      ov.id = 'todo-embed';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;background:var(--bg,#0f1512)';
+      var bar = document.createElement('div');
+      bar.style.cssText = 'flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--card,#111);border-bottom:1px solid var(--line,rgba(0,0,0,.12))';
+      var title = document.createElement('div');
+      title.textContent = 'To-Do & Contracts Tracker';
+      title.style.cssText = 'font:700 14px Inter,system-ui,sans-serif;color:var(--ink,#e9e7df)';
+      var close = document.createElement('button');
+      close.textContent = '✕ Close';
+      close.style.cssText = 'cursor:pointer;font:700 13px Inter,system-ui,sans-serif;color:#fff;border:0;border-radius:10px;padding:9px 16px;background:linear-gradient(135deg,#4F9D8B,#3A7D6E)';
+      close.onclick = function(){ ov.style.display = 'none'; };
+      var frm = document.createElement('iframe');
+      frm.id = 'todo-embed-frame';
+      frm.className = 'frm';
+      frm.style.cssText = 'flex:1 1 auto;width:100%;height:100%;border:0;background:#fff';
+      frm.setAttribute('allow', 'clipboard-read; clipboard-write');
+      bar.appendChild(title); bar.appendChild(close);
+      ov.appendChild(bar); ov.appendChild(frm);
+      document.body.appendChild(ov);
+      document.addEventListener('keydown', function(e){
+        var o = document.getElementById('todo-embed');
+        if(e.key === 'Escape' && o && o.style.display !== 'none') o.style.display = 'none';
+      });
+    }
+    ov.style.display = 'flex';
+    document.getElementById('todo-embed-frame').src = url;
+  }
   function repointTodoTracker(){
     document.querySelectorAll('.launch').forEach(function(el){
       var txt = (el.textContent || '').toLowerCase();
@@ -1041,12 +1072,12 @@ footer{color:var(--muted)}
       if(fresh.tagName === 'A') fresh.setAttribute('href', 'javascript:void 0');
       fresh.querySelectorAll('a[href]').forEach(function(a){ a.setAttribute('href', 'javascript:void 0'); });
       var sub = fresh.querySelector('small');
-      if(sub) sub.textContent = 'Excel · opens in a new tab · editable';
+      if(sub) sub.textContent = 'Excel · opens full screen · editable';
       el.parentNode.replaceChild(fresh, el);
       fresh.style.cursor = 'pointer';
       fresh.addEventListener('click', function(ev){
         ev.preventDefault(); ev.stopPropagation();
-        window.open(TODO_TRACKER_URL, '_blank', 'noopener');
+        openTrackerEmbed(TODO_TRACKER_URL);
       });
     });
   }
