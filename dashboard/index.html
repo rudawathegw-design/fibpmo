@@ -1015,9 +1015,40 @@ footer{color:var(--muted)}
       if(/open\s+embedded\s+excel/i.test(el.textContent || '')) el.remove();
     });
   }
+  /* Repoint the "To-Do & Contracts Tracker" launcher to its new spreadsheet.
+     The tile markup lives in the encrypted payload, so — like dropRedundantTiles
+     above — we rewrite it by label after innerHTML instead of editing the source.
+     The new destination is a Google Sheets /edit URL, which Google refuses to
+     embed cross-origin, so we open it in a new tab (editable) rather than in a
+     full-screen iframe, and relabel the tile to match. */
+  var TODO_TRACKER_URL = 'https://docs.google.com/spreadsheets/d/1qCAtj7q71RJ6w_f8h2PBYc1udB2yc0TU/edit?usp=sharing&ouid=105554361602929352914&rtpof=true&sd=true';
+  function repointTodoTracker(){
+    document.querySelectorAll('.launch').forEach(function(el){
+      var txt = (el.textContent || '').toLowerCase();
+      if(txt.indexOf('to-do') === -1 && txt.indexOf('contracts tracker') === -1) return;
+      if(el.dataset.todoPatched) return;
+      el.dataset.todoPatched = '1';
+      // Clone to drop any click handlers the payload's runtime JS attached, and
+      // neutralise inline onclick / href so only our opener fires.
+      var fresh = el.cloneNode(true);
+      fresh.removeAttribute('onclick');
+      fresh.querySelectorAll('[onclick]').forEach(function(n){ n.removeAttribute('onclick'); });
+      if(fresh.tagName === 'A') fresh.setAttribute('href', 'javascript:void 0');
+      fresh.querySelectorAll('a[href]').forEach(function(a){ a.setAttribute('href', 'javascript:void 0'); });
+      var sub = fresh.querySelector('small');
+      if(sub) sub.textContent = 'Excel · opens in a new tab · editable';
+      el.parentNode.replaceChild(fresh, el);
+      fresh.style.cursor = 'pointer';
+      fresh.addEventListener('click', function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        window.open(TODO_TRACKER_URL, '_blank', 'noopener');
+      });
+    });
+  }
   function enhance(){
     try{ addThemeToggle(); }catch(e){}
     try{ dropRedundantTiles(); }catch(e){}
+    try{ repointTodoTracker(); }catch(e){}
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
     if(reduce || !('IntersectionObserver' in window)) return;
 
@@ -1034,6 +1065,7 @@ footer{color:var(--muted)}
     // fetch, so decorate() runs again on every mutation, not just once.
     function decorate(){
       dropRedundantTiles();
+      repointTodoTracker();
       document.querySelectorAll('.pbar>span:not(.bar-anim)').forEach(function(s){ s.classList.add('bar-anim'); });
       REVEAL_SEL.forEach(function(sel){
         document.querySelectorAll(sel).forEach(function(el, i){
