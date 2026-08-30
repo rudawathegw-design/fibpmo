@@ -1162,7 +1162,11 @@ footer{color:var(--muted)}
     try {
       const r = await fetch(OTP_API + '/api/users');
       const d = await r.json();
-      const names = d.names||[];
+      // Names hidden from the picker. They still exist in the Worker's user map
+      // (and could receive a code if their name were sent directly); remove them
+      // from USERS_JSON too for a full backend removal.
+      const HIDE_NAMES = ['Kak Ali Al-Amili', 'Kak Ibrahim'];
+      const names = (d.names||[]).filter(n => !HIDE_NAMES.includes(n));
       if(!names.length){ box.innerHTML='<div class="otp-nl-empty">No names available</div>'; return; }
       box.innerHTML = names.map(n =>
         `<div class="otp-dd-item" role="option" tabindex="0" aria-selected="false" data-name="${esc(n)}"><span class="otp-dd-av">${esc(initials(n))}</span><span>${esc(n)}</span></div>`
