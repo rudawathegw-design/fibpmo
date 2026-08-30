@@ -830,6 +830,11 @@ footer{color:var(--muted)}
     .otp-namelist::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--brand) 38%,transparent);border-radius:9px;border:2px solid #F6FAF8}
     .otp-namelist::-webkit-scrollbar-track{background:transparent}
     .otp-nl-empty{padding:14px 12px;color:var(--muted);font-size:13px;text-align:center}
+    /* The name list sits on a fixed light panel (#F6FAF8) in BOTH themes, so its
+       text must stay dark — otherwise dark mode's light --ink/--muted render
+       near-invisible on the light panel. */
+    .otp-namelist .otp-dd-item{color:#3D3929}
+    .otp-namelist .otp-nl-empty{color:#7A7869}
     .otp-nl-req{margin:10px 0 2px;padding:12px;border-radius:12px;cursor:pointer;text-align:center;
       font-weight:800;font-size:13.5px;color:#fff;letter-spacing:.02em;
       background:linear-gradient(135deg,#F0B24B,#E9972B);box-shadow:0 8px 18px -10px rgba(233,151,43,.8)}
@@ -879,7 +884,7 @@ footer{color:var(--muted)}
         </div>
         <div class="otp-nl-req" id="otp-nl-req" role="button" tabindex="0" onclick="openReq(event)"
              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReq(event);}">＋&nbsp; Name not listed? Request access</div>
-        <button id="pw-btn" onclick="sendCode()">Send email code →</button>
+        <button id="pw-btn" onclick="sendCode()" style="display:none">Send email code →</button>
         <div class="otp-note">🔒 Please choose <b>your own</b> name only. Picking someone else just
           sends a code to their inbox — it will not let you in, and they will receive an unexpected email.</div>
       </div>
@@ -1140,6 +1145,11 @@ footer{color:var(--muted)}
       const on = el.dataset.name===n; el.classList.toggle('sel', on); el.setAttribute('aria-selected', on?'true':'false');
     });
     $('pw-err').textContent='';
+    // Tapping a name sends the code and advances straight to the code step —
+    // no separate "Send email code" button. Guard against a double-send if the
+    // same name is tapped twice while a request is already in flight.
+    if($('pw-btn') && $('pw-btn').disabled) return;
+    sendCode();
   }
   document.addEventListener('click', e=>{ const dd=$('otp-dd'), p=$('otp-dd-panel');
     if(dd && !dd.contains(e.target) && !(p && p.contains(e.target))) toggleDD(false); });
