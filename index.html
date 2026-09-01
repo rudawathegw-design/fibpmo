@@ -57,7 +57,9 @@
       document.getElementById('load').classList.remove('gone');
       f.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'r=' + Date.now();
     } else {
-      window.location.href = url;
+      // Cache-bust like the reload path, so navigating to the dashboard always
+      // loads the freshest deploy instead of a stale cached copy.
+      window.location.href = url + (url.indexOf('?') > -1 ? '&' : '?') + 'r=' + Date.now();
     }
   }
 
