@@ -1024,9 +1024,9 @@ footer{color:var(--muted)}
      The new destination is a Google Sheets /edit URL, which Google refuses to
      embed cross-origin, so we open it in a new tab (editable) rather than in a
      full-screen iframe, and relabel the tile to match. */
-  // rm=minimal strips Google's header (Share/Upgrade/account) and menu bar for a
-  // clean embed like the other doc tiles, while staying editable for signed-in users.
-  var TODO_TRACKER_URL = 'https://docs.google.com/spreadsheets/d/1qCAtj7q71RJ6w_f8h2PBYc1udB2yc0TU/edit?rm=minimal&usp=sharing&ouid=105554361602929352914&rtpof=true&sd=true';
+  // Full /edit so the complete toolbar (font size, colors, text formatting) is
+  // available for editing — matching the Projects List / Weekly Report embeds.
+  var TODO_TRACKER_URL = 'https://docs.google.com/spreadsheets/d/1qCAtj7q71RJ6w_f8h2PBYc1udB2yc0TU/edit?usp=sharing&ouid=105554361602929352914&rtpof=true&sd=true';
   // Live in-page full-screen embed of the tracker (editable for signed-in users),
   // mirroring the other Excel tiles rather than opening a new tab.
   function openTrackerEmbed(url){
@@ -1038,10 +1038,10 @@ footer{color:var(--muted)}
       var bar = document.createElement('div');
       bar.style.cssText = 'flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--card,#111);border-bottom:1px solid var(--line,rgba(0,0,0,.12))';
       var title = document.createElement('div');
-      title.textContent = 'To-Do & Contracts Tracker';
-      title.style.cssText = 'font:700 14px Inter,system-ui,sans-serif;color:var(--ink,#e9e7df)';
+      title.textContent = '▦  To-Do & Contracts Tracker';
+      title.style.cssText = 'font:700 14px Inter,system-ui,sans-serif;color:var(--ink,#e9e7df);letter-spacing:.01em';
       var close = document.createElement('button');
-      close.textContent = '✕ Close';
+      close.textContent = '✕ Exit full screen';
       close.style.cssText = 'cursor:pointer;font:700 13px Inter,system-ui,sans-serif;color:#fff;border:0;border-radius:10px;padding:9px 16px;background:linear-gradient(135deg,#4F9D8B,#3A7D6E)';
       close.onclick = function(){ ov.style.display = 'none'; };
       var frm = document.createElement('iframe');
