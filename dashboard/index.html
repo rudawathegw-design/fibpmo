@@ -1024,7 +1024,9 @@ footer{color:var(--muted)}
      The new destination is a Google Sheets /edit URL, which Google refuses to
      embed cross-origin, so we open it in a new tab (editable) rather than in a
      full-screen iframe, and relabel the tile to match. */
-  var TODO_TRACKER_URL = 'https://docs.google.com/spreadsheets/d/1qCAtj7q71RJ6w_f8h2PBYc1udB2yc0TU/edit?usp=sharing&ouid=105554361602929352914&rtpof=true&sd=true';
+  // rm=minimal strips Google's header (Share/Upgrade/account) and menu bar for a
+  // clean embed like the other doc tiles, while staying editable for signed-in users.
+  var TODO_TRACKER_URL = 'https://docs.google.com/spreadsheets/d/1qCAtj7q71RJ6w_f8h2PBYc1udB2yc0TU/edit?rm=minimal&usp=sharing&ouid=105554361602929352914&rtpof=true&sd=true';
   // Live in-page full-screen embed of the tracker (editable for signed-in users),
   // mirroring the other Excel tiles rather than opening a new tab.
   function openTrackerEmbed(url){
