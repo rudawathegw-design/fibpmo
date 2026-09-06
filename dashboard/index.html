@@ -1028,41 +1028,36 @@ footer{color:var(--muted)}
   // editing, but no account/Share/Upgrade header — matching the Projects List /
   // Weekly Report embeds exactly, with no chrome-clipping hacks.
   var TODO_TRACKER_URL = 'https://docs.google.com/spreadsheets/d/1qCAtj7q71RJ6w_f8h2PBYc1udB2yc0TU/edit?rm=embedded&hl=en&gid=1451309802#gid=1451309802';
-  // Live in-page full-screen embed of the tracker (editable for signed-in users),
-  // mirroring the other Excel tiles rather than opening a new tab.
+  // Live in-page full-screen embed of the tracker, built from the SAME shared
+  // classes the other doc tiles use (.fsov/.fsbar/.fsexit/.fsifr) so it looks
+  // identical and follows the light/dark theme rules — no one-off inline styles.
   function openTrackerEmbed(url){
     var ov = document.getElementById('todo-embed');
     if(!ov){
       ov = document.createElement('div');
       ov.id = 'todo-embed';
-      ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;background:#0d0d0d';
-      // Solid dark top bar (title + Exit), matching the Projects List / Weekly
-      // Report embeds — not theme vars, so it reads the same in both themes.
+      ov.className = 'fsov';
       var bar = document.createElement('div');
-      bar.style.cssText = 'flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#0d0d0d';
-      var title = document.createElement('div');
-      title.textContent = '▦  To-Do & Contracts Tracker';
-      title.style.cssText = 'font:700 15px Inter,system-ui,sans-serif;color:#fff;letter-spacing:.01em';
+      bar.className = 'fsbar';
+      var title = document.createElement('b');
+      title.textContent = 'To-Do & Contracts Tracker';
       var close = document.createElement('button');
+      close.className = 'fsexit';
       close.textContent = '✕ Exit full screen';
-      close.style.cssText = 'cursor:pointer;font:700 14px Inter,system-ui,sans-serif;color:#fff;border:0;border-radius:10px;padding:10px 18px;background:linear-gradient(135deg,#4F9D8B,#3A7D6E)';
-      close.onclick = function(){ ov.style.display = 'none'; };
-      // rm=embedded already omits the account header, so the iframe just fills
-      // the space below the bar — no clipping needed.
+      close.onclick = function(){ ov.classList.remove('open'); };
       var frm = document.createElement('iframe');
       frm.id = 'todo-embed-frame';
-      frm.className = 'frm';
-      frm.style.cssText = 'flex:1 1 auto;width:100%;height:100%;border:0;background:#fff';
+      frm.className = 'fsifr';
       frm.setAttribute('allow', 'clipboard-read; clipboard-write');
       bar.appendChild(title); bar.appendChild(close);
       ov.appendChild(bar); ov.appendChild(frm);
       document.body.appendChild(ov);
       document.addEventListener('keydown', function(e){
         var o = document.getElementById('todo-embed');
-        if(e.key === 'Escape' && o && o.style.display !== 'none') o.style.display = 'none';
+        if(e.key === 'Escape' && o && o.classList.contains('open')) o.classList.remove('open');
       });
     }
-    ov.style.display = 'flex';
+    ov.classList.add('open');
     document.getElementById('todo-embed-frame').src = url;
   }
   function repointTodoTracker(){
