@@ -1024,9 +1024,10 @@ footer{color:var(--muted)}
      The new destination is a Google Sheets /edit URL, which Google refuses to
      embed cross-origin, so we open it in a new tab (editable) rather than in a
      full-screen iframe, and relabel the tile to match. */
-  // Full /edit so the complete toolbar (font size, colors, text formatting) is
-  // available for editing — matching the Projects List / Weekly Report embeds.
-  var TODO_TRACKER_URL = 'https://docs.google.com/spreadsheets/d/1qCAtj7q71RJ6w_f8h2PBYc1udB2yc0TU/edit?usp=sharing&ouid=105554361602929352914&rtpof=true&sd=true';
+  // rm=embedded is Google's native embedded editor: full menus + toolbar for
+  // editing, but no account/Share/Upgrade header — matching the Projects List /
+  // Weekly Report embeds exactly, with no chrome-clipping hacks.
+  var TODO_TRACKER_URL = 'https://docs.google.com/spreadsheets/d/1qCAtj7q71RJ6w_f8h2PBYc1udB2yc0TU/edit?rm=embedded&gid=1451309802#gid=1451309802';
   // Live in-page full-screen embed of the tracker (editable for signed-in users),
   // mirroring the other Excel tiles rather than opening a new tab.
   function openTrackerEmbed(url){
@@ -1034,16 +1035,20 @@ footer{color:var(--muted)}
     if(!ov){
       ov = document.createElement('div');
       ov.id = 'todo-embed';
-      ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;background:var(--bg,#0f1512)';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;background:#0d0d0d';
+      // Solid dark top bar (title + Exit), matching the Projects List / Weekly
+      // Report embeds — not theme vars, so it reads the same in both themes.
       var bar = document.createElement('div');
-      bar.style.cssText = 'flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--card,#111);border-bottom:1px solid var(--line,rgba(0,0,0,.12))';
+      bar.style.cssText = 'flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#0d0d0d';
       var title = document.createElement('div');
       title.textContent = '▦  To-Do & Contracts Tracker';
-      title.style.cssText = 'font:700 14px Inter,system-ui,sans-serif;color:var(--ink,#e9e7df);letter-spacing:.01em';
+      title.style.cssText = 'font:700 15px Inter,system-ui,sans-serif;color:#fff;letter-spacing:.01em';
       var close = document.createElement('button');
       close.textContent = '✕ Exit full screen';
-      close.style.cssText = 'cursor:pointer;font:700 13px Inter,system-ui,sans-serif;color:#fff;border:0;border-radius:10px;padding:9px 16px;background:linear-gradient(135deg,#4F9D8B,#3A7D6E)';
+      close.style.cssText = 'cursor:pointer;font:700 14px Inter,system-ui,sans-serif;color:#fff;border:0;border-radius:10px;padding:10px 18px;background:linear-gradient(135deg,#4F9D8B,#3A7D6E)';
       close.onclick = function(){ ov.style.display = 'none'; };
+      // rm=embedded already omits the account header, so the iframe just fills
+      // the space below the bar — no clipping needed.
       var frm = document.createElement('iframe');
       frm.id = 'todo-embed-frame';
       frm.className = 'frm';
