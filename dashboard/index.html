@@ -1299,7 +1299,7 @@ footer{color:var(--muted)}
       } catch(e){}
     }
     ping(false);
-    var iv = setInterval(function(){ if (document.visibilityState === 'visible') ping(false); }, 45000);
+    var iv = setInterval(function(){ if (document.visibilityState === 'visible') ping(false); }, 600000); // 10 min — keeps KV writes low
     document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') ping(false); });
     window.addEventListener('pagehide', function(){ clearInterval(iv); ping(true); });
     window.addEventListener('beforeunload', function(){ ping(true); });
