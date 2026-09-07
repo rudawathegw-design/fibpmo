@@ -1,0 +1,54 @@
+name: auto-version
+
+# On every push to master, stamp build.json with the current build number
+# (commit count), short commit SHA, the version/codename from the dashboard,
+# and a Baghdad timestamp. The PMO dashboard badge on the report reads this
+# file so its version/build/commit/time always match the latest deploy.
+#
+# No loop: the commit this job pushes uses GITHUB_TOKEN, which does not
+# re-trigger workflows; the actor guard and paths-ignore are extra insurance.
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - 'build.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-version
+  cancel-in-progress: false
+
+jobs:
+  stamp:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Write build.json
+        run: |
+          V=$(grep -oE 'class="v">[^<]+' dashboard/index.html | head -1 | sed -E 's/.*>//; s/^v//')
+          [ -z "$V" ] && V="0.0"
+          REL=$(grep -oE 'class="rel">[^<]+' dashboard/index.html | head -1 | sed -E 's/.*>//')
+          BUILD=$(git rev-list --count HEAD)
+          SHA=$(git rev-parse --short=7 HEAD)
+          TIME=$(TZ=Asia/Baghdad date +"%Y-%m-%dT%H:%M:%S%z")
+          printf '{"version":"%s","rel":"%s","build":%s,"commit":"%s","builtAt":"%s"}\n' "$V" "$REL" "$BUILD" "$SHA" "$TIME" > build.json
+          echo "Stamped:"; cat build.json
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- build.json; then
+            echo "build.json unchanged — nothing to commit."
+            exit 0
+          fi
+          git add build.json
+          git commit -m "chore(version): stamp build [auto-version]"
+          git push
