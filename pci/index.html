@@ -1524,8 +1524,6 @@ function pptLoad(){
     document.head.appendChild(s);
   });
 }
-// same rule the tickets strip uses: done / overdue / in progress
-function pptCls(i){ return i.category==='done'?'done':((i.due&&i.due<TODAY)?'over':'prog'); }
 function pptDate(){ return new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); }
 
 // title bar + footer shared by every content slide
@@ -1561,13 +1559,10 @@ async function exportDeck(){
     s.addText('First Iraq Bank · PMO · '+pptDate(),{x:0.7,y:4.6,w:8.6,h:0.4,fontSize:12,color:'94A3B8'});
 
     /* 2 ─ executive summary */
-    s=p.addSlide(); pptFrame(s,'Executive summary','Gap remediation against the assessor’s report');
-    const noEv=WL_ALL.filter(f=>f._noEv).length, noTk=WL_ALL.filter(f=>f._noTk).length;
-    pptKpi(s,0.45,1.05,1.75,(gs.pct||0)+'%','Remediated',PPT_BRAND);
-    pptKpi(s,2.35,1.05,1.75,gs.closed||0,'Findings closed',PPT_GREEN);
-    pptKpi(s,4.25,1.05,1.75,gs.open||0,'Still open',PPT_RED);
-    pptKpi(s,6.15,1.05,1.75,noEv,'Done, no evidence',PPT_AMBER);
-    pptKpi(s,8.05,1.05,1.45,noTk,'No Jira ticket',PPT_BLUE);
+    s=p.addSlide(); pptFrame(s,'Executive summary','Findings closed or open on the assessor’s report');
+    pptKpi(s,0.45,1.05,2.9,(gs.pct||0)+'%','Closed',PPT_BRAND);
+    pptKpi(s,3.55,1.05,2.9,gs.closed||0,'Findings closed',PPT_GREEN);
+    pptKpi(s,6.65,1.05,2.85,gs.open||0,'Findings open',PPT_RED);
     s.addShape('roundRect',{x:0.45,y:2.6,w:9.05,h:0.34,fill:{color:'EEF2F6'},rectRadius:0.17});
     if(gs.pct) s.addShape('roundRect',{x:0.45,y:2.6,w:Math.max(0.34,9.05*(gs.pct||0)/100),h:0.34,fill:{color:PPT_BRAND},rectRadius:0.17});
     s.addText((gs.closed||0)+' of '+(gs.total||0)+' findings closed',{x:0.45,y:3.0,w:9.05,h:0.3,fontSize:11,color:PPT_MUTE});
@@ -1576,10 +1571,11 @@ async function exportDeck(){
       {text:'Where we are   ',options:{bold:true,color:PPT_INK}},
       {text:phase?(phase.title+(phase.note?' — '+phase.note:'')):'Remediation in progress',options:{color:PPT_MUTE}}
     ],{x:0.45,y:3.5,w:9.05,h:0.35,fontSize:13});
+    // areas fully closed vs still carrying open findings
+    const areasDone=areas.filter(a=>(a.pct||0)>=100).length;
     s.addText([
-      {text:'Watchlist   ',options:{bold:true,color:PPT_INK}},
-      {text:noEv+' closed without an evidence link · '+WL_ALL.filter(f=>f._fu).length+
-            ' awaiting assessor re-review · '+noTk+' findings with no Jira ticket',options:{color:PPT_MUTE}}
+      {text:'Areas   ',options:{bold:true,color:PPT_INK}},
+      {text:areasDone+' of '+areas.length+' areas fully closed · '+(areas.length-areasDone)+' still carrying open findings',options:{color:PPT_MUTE}}
     ],{x:0.45,y:3.9,w:9.05,h:0.35,fontSize:13});
 
     /* 3 ─ roadmap */
@@ -1616,44 +1612,39 @@ async function exportDeck(){
     if(open.length){
       s=p.addSlide(); pptFrame(s,'Open findings',openAll.length+' open · showing first '+open.length);
       const hdr=t=>({text:t,options:{bold:true,color:'FFFFFF',fill:{color:PPT_BRAND}}});
-      const rows=[[hdr('Area'),hdr('Finding'),hdr('FIB status'),hdr('Jira')]];
+      const rows=[[hdr('Area'),hdr('Finding'),hdr('Verdict')]];
       open.forEach(f=>{
         const t=String(f.section||f.observation||'').replace(/\s+/g,' ').trim();
-        rows.push([f.area||'', t.length>90?t.slice(0,90)+'…':t, f.fib_status||'—', jiraKey(f.jira)||'—']);
+        rows.push([f.area||'', t.length>110?t.slice(0,110)+'…':t,
+                   {text:'Open',options:{color:PPT_RED,bold:true,align:'center'}}]);
       });
-      s.addTable(rows,{x:0.45,y:1.0,w:9.05,colW:[1.6,5.15,1.35,0.95],fontSize:9,color:PPT_INK,
+      s.addTable(rows,{x:0.45,y:1.0,w:9.05,colW:[1.7,6.35,1.0],fontSize:9,color:PPT_INK,
         border:{type:'solid',color:PPT_LINE,pt:0.5},rowH:0.27,valign:'middle',autoPage:false});
     }
 
-    /* 6 ─ Jira delivery */
-    if(EPIC&&EPIC.length){
-      const done=EPIC.filter(i=>pptCls(i)==='done').length, lates=EPIC.filter(i=>pptCls(i)==='over');
-      s=p.addSlide(); pptFrame(s,'Jira delivery','Epic FIBXPI-49 · team evidence tickets');
-      pptKpi(s,0.45,1.05,2.9,EPIC.length,'Tickets',PPT_INK);
-      pptKpi(s,3.55,1.05,2.9,done,'Done',PPT_GREEN);
-      pptKpi(s,6.65,1.05,2.85,lates.length,'Overdue',lates.length?PPT_RED:PPT_MUTE);
-      if(lates.length){
-        const hdr=t=>({text:t,options:{bold:true,color:'FFFFFF',fill:{color:PPT_RED}}});
-        const rows=[[hdr('Ticket'),hdr('Summary'),hdr('Owner'),hdr('Late')]];
-        lates.slice(0,9).forEach(i=>rows.push([i.key||'',String(i.summary||'').slice(0,80),i.assignee||'—',daysLate(i.due)+'d']));
-        s.addText('Overdue tickets',{x:0.45,y:2.5,w:9.05,h:0.3,fontSize:13,bold:true,color:PPT_INK});
-        s.addTable(rows,{x:0.45,y:2.85,w:9.05,colW:[1.25,5.5,1.6,0.7],fontSize:9,color:PPT_INK,
-          border:{type:'solid',color:PPT_LINE,pt:0.5},rowH:0.26,valign:'middle',autoPage:false});
-      }else{
-        s.addText('No overdue tickets.',{x:0.45,y:2.7,w:9.05,h:0.4,fontSize:13,color:PPT_MUTE});
-      }
+    /* 6 ─ closed findings */
+    const closedAll=WL_ALL.filter(f=>_norm(f.status||'')==='closed'), closed=closedAll.slice(0,14);
+    if(closed.length){
+      s=p.addSlide(); pptFrame(s,'Closed findings',closedAll.length+' closed · showing first '+closed.length);
+      const hdr=t=>({text:t,options:{bold:true,color:'FFFFFF',fill:{color:PPT_GREEN}}});
+      const rows=[[hdr('Area'),hdr('Finding'),hdr('Verdict')]];
+      closed.forEach(f=>{
+        const t=String(f.section||f.observation||'').replace(/\s+/g,' ').trim();
+        rows.push([f.area||'', t.length>110?t.slice(0,110)+'…':t,
+                   {text:'Closed',options:{color:PPT_GREEN,bold:true,align:'center'}}]);
+      });
+      s.addTable(rows,{x:0.45,y:1.0,w:9.05,colW:[1.7,6.35,1.0],fontSize:9,color:PPT_INK,
+        border:{type:'solid',color:PPT_LINE,pt:0.5},rowH:0.27,valign:'middle',autoPage:false});
     }
 
     /* 7 ─ what we need */
-    s=p.addSlide(); pptFrame(s,'Next steps','Actions to keep the programme on track');
-    const fu=WL_ALL.filter(f=>f._fu).length, lateN=(EPIC||[]).filter(i=>pptCls(i)==='over').length;
+    s=p.addSlide(); pptFrame(s,'Next steps','Actions to close the remaining findings');
+    const worst=areas.filter(a=>(a.pct||0)<100).slice(0,3);
     const asks=[];
-    if(noEv) asks.push(noEv+' findings are marked Done in FIB status but carry no evidence link — owners to upload and link the evidence.');
-    if(noTk) asks.push(noTk+' findings have no Jira ticket — PMO to raise tickets and assign owners.');
-    if(fu) asks.push(fu+' findings have evidence uploaded and are awaiting the assessor’s re-review.');
-    if(lateN) asks.push(lateN+' Jira tickets are past their due date — owners to re-baseline or close.');
-    if(gs.open) asks.push(gs.open+' findings remain open against the assessment report.');
-    asks.push('Target: complete remediation, then hand over to the assessor for validation and sign-off.');
+    if(gs.open) asks.push(gs.open+' of '+(gs.total||0)+' findings remain open on the assessment report.');
+    worst.forEach(a=>asks.push(a.name+' — '+((a.total||0)-(a.closed||0))+' of '+(a.total||0)+' findings still open ('+(a.pct||0)+'% closed).'));
+    if(areasDone) asks.push(areasDone+' area'+(areasDone>1?'s are':' is')+' fully closed and ready for validation.');
+    asks.push('Close the remaining findings, then hand over to the assessor for validation and sign-off.');
     s.addText(asks.map(t=>({text:t,options:{bullet:{code:'25AA'},breakLine:true}})),
       {x:0.55,y:1.15,w:8.95,h:3.8,fontSize:14,color:PPT_INK,lineSpacingMultiple:1.35});
 
