@@ -371,6 +371,7 @@ tr.needs-ev td{background:#fffafa}
         <button class="cbtn" id="wl-mail" onclick="exportOutlook()" title="Outlook draft for the assessor — no Jira, evidence links only">✉ Email assessor (<span id="mail-n">0</span>)</button>
         <button class="cbtn" id="wl-mail-team" onclick="exportTeamEmail()" title="Outlook draft for the FIB team — includes Jira tickets, owners and the action required">✉ Email FIB team (<span id="mail-t">0</span>)</button>
         <button class="cbtn" id="wl-sync" onclick="syncFromJira()">⟳ Set FIB status from Jira</button>
+        <button class="cbtn" id="wl-ppt" onclick="exportDeck()" title="PMO status deck (.pptx) built from the live figures">⬇ PowerPoint</button>
         <button class="cbtn" id="wl-export" onclick="exportWorkbook()" style="display:none">⬇ Download updated workbook (<span id="pend-n">0</span>)</button>
         <button class="cbtn" id="wl-clear" onclick="clearPending()" style="display:none">✓ Mark as uploaded</button>
       </div></div>
@@ -1506,6 +1507,160 @@ function openEvidence(k){
   const b=document.getElementById('ov-body'); b.classList.add('flush');
   b.innerHTML=`<iframe src="${esc(e.url)}" style="width:100%;height:calc(100vh - 60px);border:0;display:block" allow="fullscreen" allowfullscreen></iframe>`;
   document.getElementById('ov').classList.add('show');
+}
+/* ── PMO status deck (.pptx) ──────────────────────────────────────────────
+   Built from whatever is on screen right now: the Box gap workbook, the live
+   Jira epic and the roadmap. No server round-trip, so it works offline once
+   the cockpit has loaded. */
+const PPT_BRAND='0F9389', PPT_INK='0F172A', PPT_MUTE='64748B', PPT_LINE='E2E8F0';
+const PPT_RED='DC2626', PPT_AMBER='F59E0B', PPT_GREEN='16A34A', PPT_BLUE='2563EB';
+
+function pptLoad(){
+  if(window.PptxGenJS) return Promise.resolve();
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
+    s.onload=res; s.onerror=()=>rej(new Error('Could not load the PowerPoint library'));
+    document.head.appendChild(s);
+  });
+}
+// same rule the tickets strip uses: done / overdue / in progress
+function pptCls(i){ return i.category==='done'?'done':((i.due&&i.due<TODAY)?'over':'prog'); }
+function pptDate(){ return new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); }
+
+// title bar + footer shared by every content slide
+function pptFrame(s,title,sub){
+  s.addShape('rect',{x:0,y:0,w:'100%',h:0.78,fill:{color:PPT_BRAND}});
+  s.addText(title,{x:0.45,y:0.1,w:8.2,h:0.42,fontSize:20,bold:true,color:'FFFFFF'});
+  if(sub) s.addText(sub,{x:0.45,y:0.46,w:8.2,h:0.26,fontSize:11,color:'D7F2EF'});
+  s.addText('First Iraq Bank · PCI DSS Programme',{x:0.45,y:5.2,w:5,h:0.25,fontSize:9,color:PPT_MUTE});
+  s.addText(pptDate(),{x:7.2,y:5.2,w:2.35,h:0.25,fontSize:9,color:PPT_MUTE,align:'right'});
+}
+function pptKpi(s,x,y,w,val,label,color){
+  s.addShape('roundRect',{x,y,w,h:1.25,fill:{color:'FFFFFF'},line:{color:PPT_LINE,width:1},rectRadius:0.08});
+  s.addText(String(val),{x,y:y+0.12,w,h:0.62,fontSize:34,bold:true,color,align:'center'});
+  s.addText(label,{x,y:y+0.76,w,h:0.36,fontSize:10,color:PPT_MUTE,align:'center'});
+}
+
+async function exportDeck(){
+  const btn=document.getElementById('wl-ppt');
+  if(!GAPS){ toast('Live gap data has not loaded yet — try again in a moment.',1); return; }
+  if(btn){ btn.disabled=true; btn.textContent='Building deck…'; }
+  try{
+    await pptLoad();
+    const gs=GAPS.summary||{}, areas=(GAPS.areas||[]).slice().sort((a,b)=>(a.pct||0)-(b.pct||0));
+    const p=new PptxGenJS(); p.layout='LAYOUT_16x9';
+    p.author='FIB PMO'; p.company='First Iraq Bank'; p.title='PCI DSS Compliance — Status Report';
+
+    /* 1 ─ title */
+    let s=p.addSlide();
+    s.addShape('rect',{x:0,y:0,w:'100%',h:'100%',fill:{color:'0B2E2B'}});
+    s.addShape('rect',{x:0,y:4.35,w:'100%',h:0.1,fill:{color:PPT_BRAND}});
+    s.addText('PCI DSS Compliance',{x:0.7,y:1.7,w:8.6,h:0.8,fontSize:40,bold:true,color:'FFFFFF'});
+    s.addText('Programme status report',{x:0.7,y:2.5,w:8.6,h:0.5,fontSize:20,color:'5EEAD4'});
+    s.addText('First Iraq Bank · PMO · '+pptDate(),{x:0.7,y:4.6,w:8.6,h:0.4,fontSize:12,color:'94A3B8'});
+
+    /* 2 ─ executive summary */
+    s=p.addSlide(); pptFrame(s,'Executive summary','Gap remediation against the assessor’s report');
+    const noEv=WL_ALL.filter(f=>f._noEv).length, noTk=WL_ALL.filter(f=>f._noTk).length;
+    pptKpi(s,0.45,1.05,1.75,(gs.pct||0)+'%','Remediated',PPT_BRAND);
+    pptKpi(s,2.35,1.05,1.75,gs.closed||0,'Findings closed',PPT_GREEN);
+    pptKpi(s,4.25,1.05,1.75,gs.open||0,'Still open',PPT_RED);
+    pptKpi(s,6.15,1.05,1.75,noEv,'Done, no evidence',PPT_AMBER);
+    pptKpi(s,8.05,1.05,1.45,noTk,'No Jira ticket',PPT_BLUE);
+    s.addShape('roundRect',{x:0.45,y:2.6,w:9.05,h:0.34,fill:{color:'EEF2F6'},rectRadius:0.17});
+    if(gs.pct) s.addShape('roundRect',{x:0.45,y:2.6,w:Math.max(0.34,9.05*(gs.pct||0)/100),h:0.34,fill:{color:PPT_BRAND},rectRadius:0.17});
+    s.addText((gs.closed||0)+' of '+(gs.total||0)+' findings closed',{x:0.45,y:3.0,w:9.05,h:0.3,fontSize:11,color:PPT_MUTE});
+    const phase=(PHASES||[]).find(x=>x.status==='doing');
+    s.addText([
+      {text:'Where we are   ',options:{bold:true,color:PPT_INK}},
+      {text:phase?(phase.title+(phase.note?' — '+phase.note:'')):'Remediation in progress',options:{color:PPT_MUTE}}
+    ],{x:0.45,y:3.5,w:9.05,h:0.35,fontSize:13});
+    s.addText([
+      {text:'Watchlist   ',options:{bold:true,color:PPT_INK}},
+      {text:noEv+' closed without an evidence link · '+WL_ALL.filter(f=>f._fu).length+
+            ' awaiting assessor re-review · '+noTk+' findings with no Jira ticket',options:{color:PPT_MUTE}}
+    ],{x:0.45,y:3.9,w:9.05,h:0.35,fontSize:13});
+
+    /* 3 ─ roadmap */
+    if(PHASES&&PHASES.length){
+      s=p.addSlide(); pptFrame(s,'Programme roadmap',(PHASES.filter(x=>x.status==='done').length)+' of '+PHASES.length+' phases complete');
+      const n=PHASES.length, w=Math.min(1.75,(9.1-(n-1)*0.14)/n), gap=n>1?(9.1-n*w)/(n-1):0;
+      PHASES.forEach((ph,i)=>{
+        const x=0.45+i*(w+gap), done=ph.status==='done', doing=ph.status==='doing';
+        const col=done?PPT_GREEN:(doing?String(ph.color||'#2563eb').replace('#',''):'CBD5E1');
+        s.addShape('roundRect',{x,y:1.6,w,h:1.5,fill:{color:done?'F0FDF4':(doing?'FFFFFF':'F8FAFC')},
+                                line:{color:col,width:doing?2:1},rectRadius:0.08});
+        s.addText(done?'✓':(ph.flag?'⚑':String(i+1)),{x,y:1.72,w,h:0.34,fontSize:14,bold:true,color:col,align:'center'});
+        s.addText(ph.title||'',{x:x+0.06,y:2.06,w:w-0.12,h:0.4,fontSize:11,bold:true,color:PPT_INK,align:'center'});
+        if(ph.metric==='gaps'&&gs.total)
+          s.addText((gs.pct||0)+'% · '+(gs.closed||0)+'/'+(gs.total||0),{x:x+0.06,y:2.45,w:w-0.12,h:0.3,fontSize:9,color:PPT_MUTE,align:'center'});
+        else if(ph.note)
+          s.addText(ph.note,{x:x+0.06,y:2.45,w:w-0.12,h:0.5,fontSize:8.5,color:PPT_MUTE,align:'center'});
+        s.addText(done?'Complete':(doing?'In progress':'Planned'),{x:x+0.06,y:2.78,w:w-0.12,h:0.26,fontSize:8.5,bold:true,color:col,align:'center'});
+      });
+    }
+
+    /* 4 ─ remediation by area */
+    if(areas.length){
+      s=p.addSlide(); pptFrame(s,'Remediation by area','Weakest areas first');
+      const top=areas.slice(0,10);
+      s.addChart(p.ChartType.bar,[{name:'Closed %',labels:top.map(a=>a.name),values:top.map(a=>a.pct||0)}],
+        {x:0.45,y:1.0,w:9.05,h:4.05,barDir:'bar',chartColors:[PPT_BRAND],showValue:true,
+         dataLabelFontSize:9,dataLabelColor:PPT_INK,catAxisLabelFontSize:9,valAxisLabelFontSize:9,
+         valAxisMaxVal:100,valAxisMinVal:0,showLegend:false,barGapWidthPct:45});
+    }
+
+    /* 5 ─ open findings needing attention */
+    const openAll=WL_ALL.filter(f=>_norm(f.status||'')!=='closed'), open=openAll.slice(0,14);
+    if(open.length){
+      s=p.addSlide(); pptFrame(s,'Open findings',openAll.length+' open · showing first '+open.length);
+      const hdr=t=>({text:t,options:{bold:true,color:'FFFFFF',fill:{color:PPT_BRAND}}});
+      const rows=[[hdr('Area'),hdr('Finding'),hdr('FIB status'),hdr('Jira')]];
+      open.forEach(f=>{
+        const t=String(f.section||f.observation||'').replace(/\s+/g,' ').trim();
+        rows.push([f.area||'', t.length>90?t.slice(0,90)+'…':t, f.fib_status||'—', jiraKey(f.jira)||'—']);
+      });
+      s.addTable(rows,{x:0.45,y:1.0,w:9.05,colW:[1.6,5.15,1.35,0.95],fontSize:9,color:PPT_INK,
+        border:{type:'solid',color:PPT_LINE,pt:0.5},rowH:0.27,valign:'middle',autoPage:false});
+    }
+
+    /* 6 ─ Jira delivery */
+    if(EPIC&&EPIC.length){
+      const done=EPIC.filter(i=>pptCls(i)==='done').length, lates=EPIC.filter(i=>pptCls(i)==='over');
+      s=p.addSlide(); pptFrame(s,'Jira delivery','Epic FIBXPI-49 · team evidence tickets');
+      pptKpi(s,0.45,1.05,2.9,EPIC.length,'Tickets',PPT_INK);
+      pptKpi(s,3.55,1.05,2.9,done,'Done',PPT_GREEN);
+      pptKpi(s,6.65,1.05,2.85,lates.length,'Overdue',lates.length?PPT_RED:PPT_MUTE);
+      if(lates.length){
+        const hdr=t=>({text:t,options:{bold:true,color:'FFFFFF',fill:{color:PPT_RED}}});
+        const rows=[[hdr('Ticket'),hdr('Summary'),hdr('Owner'),hdr('Late')]];
+        lates.slice(0,9).forEach(i=>rows.push([i.key||'',String(i.summary||'').slice(0,80),i.assignee||'—',daysLate(i.due)+'d']));
+        s.addText('Overdue tickets',{x:0.45,y:2.5,w:9.05,h:0.3,fontSize:13,bold:true,color:PPT_INK});
+        s.addTable(rows,{x:0.45,y:2.85,w:9.05,colW:[1.25,5.5,1.6,0.7],fontSize:9,color:PPT_INK,
+          border:{type:'solid',color:PPT_LINE,pt:0.5},rowH:0.26,valign:'middle',autoPage:false});
+      }else{
+        s.addText('No overdue tickets.',{x:0.45,y:2.7,w:9.05,h:0.4,fontSize:13,color:PPT_MUTE});
+      }
+    }
+
+    /* 7 ─ what we need */
+    s=p.addSlide(); pptFrame(s,'Next steps','Actions to keep the programme on track');
+    const fu=WL_ALL.filter(f=>f._fu).length, lateN=(EPIC||[]).filter(i=>pptCls(i)==='over').length;
+    const asks=[];
+    if(noEv) asks.push(noEv+' findings are marked Done in FIB status but carry no evidence link — owners to upload and link the evidence.');
+    if(noTk) asks.push(noTk+' findings have no Jira ticket — PMO to raise tickets and assign owners.');
+    if(fu) asks.push(fu+' findings have evidence uploaded and are awaiting the assessor’s re-review.');
+    if(lateN) asks.push(lateN+' Jira tickets are past their due date — owners to re-baseline or close.');
+    if(gs.open) asks.push(gs.open+' findings remain open against the assessment report.');
+    asks.push('Target: complete remediation, then hand over to the assessor for validation and sign-off.');
+    s.addText(asks.map(t=>({text:t,options:{bullet:{code:'25AA'},breakLine:true}})),
+      {x:0.55,y:1.15,w:8.95,h:3.8,fontSize:14,color:PPT_INK,lineSpacingMultiple:1.35});
+
+    await p.writeFile({fileName:'PCI DSS Status — '+new Date().toISOString().slice(0,10)+'.pptx'});
+    toast('PowerPoint deck downloaded.');
+  }catch(e){ toast('Deck export failed: '+e.message,1); }
+  finally{ if(btn){ btn.disabled=false; btn.innerHTML='⬇ PowerPoint'; } }
 }
 function closeOv(){ const o=document.getElementById('ov'); o.classList.remove('show');
   const m=document.getElementById('ov-modal'); m.classList.remove('full','wide');
