@@ -535,8 +535,7 @@ function renderActivity(){
       if(from||to) detail=`<div class="achg">${from?`<span class="achip">${esc(from)}</span> →`:''}<span class="achip to">${esc(to||'—')}</span></div>`;
     }
     return `<div class="arow"><div class="aic ${a.kind}">${ic}</div>
-      <div><div class="ahead">${head} <span class="awhen">· ${esc(ago(a.ts))}</span>
-        <button class="cbtn" style="padding:2px 8px;font-size:11px;margin-left:6px" onclick="commentOn('${esc(a.key)}')">💬 Reply</button></div>
+      <div><div class="ahead">${head} <span class="awhen">· ${esc(ago(a.ts))}</span></div>
         <div class="asum">${esc(a.summary||'')}</div>${detail}</div></div>`;
   }).join('')||'<div style="color:#94a3b8;font-size:13px;padding:10px 2px">No activity of this type.</div>';
   const more=document.getElementById('act-more');
@@ -844,15 +843,6 @@ Generated from the PCI DSS Compliance Cockpit on ${esc2(today)}.</p></div>`;
   const subject='PCI DSS - action required on '+list.length+' finding'+(list.length>1?'s':'');
   downloadEml(subject,body,'PCI action list team '+new Date().toISOString().slice(0,10)+'.eml');
   toast('Outlook draft downloaded ('+list.length+' findings) — open the .eml, add the team and send.');
-}
-// One-click chase: ask the assessor to re-review the evidence already uploaded.
-function followUp(i){
-  const f=WL_ALL[i]; if(!f) return;
-  const key=jiraKey(f.jira);
-  if(!key){ toast('No Jira ticket linked to this finding — add one first.',1); return; }
-  const pre='Follow-up: the requested evidence has been uploaded and is linked in the Assessment Gap Report'
-    +' for "'+(f.section||f.area)+'". Could you please re-review and confirm whether anything further is required to close this finding? Thank you.';
-  commentOn(key,pre);
 }
 function refreshNoEv(){
   WL_ALL.forEach(f=>{
@@ -1419,7 +1409,7 @@ function renderWorklist(){
         FIB_OPTS.map(o=>`<option value="${esc(o)}"${(f.fib_status||'')===o?' selected':''}>${esc(o||'—')}</option>`).join('')+`</select>`
       : `<span class="fib-tag">${esc(f.fib_status||'—')}</span>`)
       +(f._pendFib?'<div class="pendtag">● not in Box yet</div>':'')
-      +(f._fu?`<div><span class="fu-badge" title="Evidence is uploaded but the assessor still has this Open — click to ask them to re-review" onclick="event.stopPropagation();followUp(${f._i})">⚑ Quick follow-up</span></div>`:'');
+      ;
     const sec=f.section?`<span style="color:#64748b">${esc(f.section)} · </span>`:'';
     return `<tr class="f-open${f._noEv?' needs-ev':''}" onclick="this.classList.toggle('exp')">
       <td><div class="wl-area">${esc(f.area)}</div></td>
@@ -1440,7 +1430,7 @@ function renderWorklist(){
             const link=/^https?:\/\//i.test(x.v);
             const val=link?`<a href="${esc(x.v)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(x.v.length>70?x.v.slice(0,70)+'…':x.v)}</a>`:esc(x.v);
             return `<div class="m1 mx"><b>${esc(x.h)}:</b> ${val}</div>`;}).join('')}
-          <div class="wl-acts">${key?`<a class="cbtn" href="${esc(f.jira)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">Open ${esc(key)} ↗</a><button class="cbtn" onclick="event.stopPropagation();commentOn('${esc(key)}')">💬 Comment</button>`:'<span style="font-size:11.5px;color:#94a3b8">No linked Jira ticket</span>'}</div>
+          <div class="wl-acts">${key?`<a class="cbtn" href="${esc(f.jira)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">Open ${esc(key)} ↗</a>`:'<span style="font-size:11.5px;color:#94a3b8">No linked Jira ticket</span>'}</div>
         </div></td>
       <td class="wl-tk">${tk}</td>
       <td class="wl-tk">${clientCell}</td>
@@ -1466,8 +1456,7 @@ async function loadEpic(){
       const c=cls(i), lbl=c==='done'?'Done':(c==='over'?daysLate(i.due)+'d late':'In progress');
       return `<div class="jr"><a class="jr-key" href="https://fibtask.atlassian.net/browse/${esc(i.key)}" target="_blank" rel="noopener">${esc(i.key)}</a>
         <span class="jr-sum" title="${esc(i.summary)}">${esc(i.summary)}</span>
-        <span class="jr-st ${c}">${esc(lbl)}</span>
-        <button class="cbtn" style="padding:3px 8px" onclick="commentOn('${esc(i.key)}')">💬</button></div>`;
+        <span class="jr-st ${c}">${esc(lbl)}</span></div>`;
     }).join('')||'<div style="color:#94a3b8;padding:6px">No tickets.</div>';
     document.getElementById('jira-sec').style.display='';
     if(WL_ALL.length) renderWorklist(); // refresh so live Jira statuses show on rows
@@ -1485,14 +1474,8 @@ function openTask(key){
     <div class="tm-row"><b>Due:</b> ${esc(i.due||'—')} &nbsp; <b>Priority:</b> ${esc(i.priority||'—')} &nbsp; <b>Type:</b> ${esc(i.type||'—')}</div>
     <div class="f-links" style="margin-top:14px">
       <a href="https://fibtask.atlassian.net/browse/${esc(key)}" target="_blank" rel="noopener">Open ${esc(key)} in Jira ↗</a>
-      <button class="cbtn" onclick="commentOn('${esc(key)}')">💬 Comment</button>
-      <button class="cbtn" onclick="nudge('${esc(key)}','${esc((i.assignee||'').split(' ')[0])}')">✉ Nudge owner</button>
     </div>`;
   document.getElementById('ov').classList.add('show');
-}
-function nudge(key,who){
-  const pre=(who?who+', ':'')+'please share the latest status and upload the required evidence for '+key+'. Thank you.';
-  commentOn(key,pre);
 }
 function openArea(idx){
   const a=(GAPS.areas||[])[idx]; if(!a) return;
@@ -1506,7 +1489,7 @@ function openArea(idx){
     const key=jiraKey(f.jira);
     const live=key&&_LIVE[key]?_LIVE[key]:null;
     const liveChip=live?`<span class="tag" style="background:#eef2ff;color:#3730a3">Jira: ${esc(live.status)}</span>`:'';
-    const actions=key?`<div class="f-links"><a href="${esc(f.jira)}" target="_blank" rel="noopener">Jira ${esc(key)} ↗</a><button class="cbtn" onclick="commentOn('${esc(key)}')">💬 Comment</button></div>`:'';
+    const actions=key?`<div class="f-links"><a href="${esc(f.jira)}" target="_blank" rel="noopener">Jira ${esc(key)} ↗</a></div>`:'';
     return `<div class="finding"><div class="f-top"><span class="f-sec">${i+1}. ${esc(f.section||'Finding')}</span>${stTag}${fib}${liveChip}</div>
       ${f.observation?`<div class="f-row"><b>Observation:</b> ${esc(f.observation)}</div>`:''}
       ${f.recommendation?`<div class="f-row"><b>Recommendation:</b> ${esc(f.recommendation)}</div>`:''}
@@ -1523,16 +1506,6 @@ function openEvidence(k){
   const b=document.getElementById('ov-body'); b.classList.add('flush');
   b.innerHTML=`<iframe src="${esc(e.url)}" style="width:100%;height:calc(100vh - 60px);border:0;display:block" allow="fullscreen" allowfullscreen></iframe>`;
   document.getElementById('ov').classList.add('show');
-}
-async function commentOn(key,pre){
-  const text=prompt('Add a comment to '+key+' (posts to Jira):', pre||''); if(text==null) return;
-  const t=text.trim(); if(!t) return;
-  const pw=sessionStorage.getItem('pci_pw')||'';
-  try{
-    const r=await fetch(GH_PROXY,{method:'POST',headers:{'Content-Type':'application/json','X-Proxy-Auth':pw,'X-Comment-Auth':pw},body:JSON.stringify({action:'comment',key:key,text:t})});
-    const d=await r.json().catch(()=>({}));
-    alert(r.ok?('Comment posted to '+key+' ✓'):('Failed: '+(d.message||('HTTP '+r.status))));
-  }catch(e){ alert('Failed: '+e.message); }
 }
 function closeOv(){ const o=document.getElementById('ov'); o.classList.remove('show');
   const m=document.getElementById('ov-modal'); m.classList.remove('full','wide');
